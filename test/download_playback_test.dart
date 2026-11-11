@@ -64,8 +64,8 @@ class _Extensions extends ExtensionNotifier {
 }
 
 class _Queue extends DownloadQueueNotifier {
-  String? prioritized;
-  int sequence = 0;
+  String? _prioritized;
+  int _sequence = 0;
 
   void completeAndRemove(String id, String path) {
     final current = state.items.firstWhere((item) => item.id == id);
@@ -103,7 +103,7 @@ class _Queue extends DownloadQueueNotifier {
     final items = [
       for (var index = 0; index < tracks.length; index++)
         DownloadItem(
-          id: 'download-${sequence++}',
+          id: 'download-${_sequence++}',
           track: tracks[index],
           service: service,
           createdAt: DateTime.utc(2026),
@@ -115,7 +115,7 @@ class _Queue extends DownloadQueueNotifier {
 
   @override
   void downloadNext(String id) {
-    prioritized = id;
+    _prioritized = id;
   }
 }
 
@@ -494,7 +494,7 @@ void main() {
       expect(paths.length, 10);
       expect(paths.every((p) => p != null), isTrue);
       expect(queue.state.items.map((t) => t.track.id), ['song-0', 'song-1']);
-      expect(queue.prioritized, 'download-0');
+      expect(queue._prioritized, 'download-0');
       // A manual/local download can complete while this lazy track is waiting.
       available['song-6'] = 'content://library/six';
       await service.prepareWindow(paths.cast<String>(), 6);
@@ -709,7 +709,7 @@ void main() {
       expect(paths.every((path) => isDownloadPlaybackSource(path!)), isTrue);
       expect(paths[0], isNot(paths[1]));
       expect(queue.state.items.map((item) => item.track.id), ['second']);
-      expect(queue.prioritized, 'download-0');
+      expect(queue._prioritized, 'download-0');
       // Actual worker contract: completion is published, then queue row removed
       // synchronously; the selected download must keep its final SAF identity.
       queue.completeAndRemove('download-0', 'content://music/final');

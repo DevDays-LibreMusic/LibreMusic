@@ -82,7 +82,7 @@ class _BlockingSettings extends SettingsNotifier {
 }
 
 class _RestoreHistory extends DownloadHistoryNotifier {
-  bool restored = false;
+  bool _restored = false;
 
   @override
   DownloadHistoryState build() => DownloadHistoryState();
@@ -91,7 +91,7 @@ class _RestoreHistory extends DownloadHistoryNotifier {
   Future<void> restoreFromBackupOperation(
     Future<void> Function() restore,
   ) async {
-    restored = true;
+    _restored = true;
   }
 }
 
@@ -238,7 +238,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 6));
 
-    expect(history.restored, isTrue);
+    expect(history._restored, isTrue);
     expect(tester.takeException(), isNull);
   });
 }
