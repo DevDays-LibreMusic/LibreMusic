@@ -9,6 +9,7 @@ import 'package:mornye/models/theme_settings.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
+import 'package:mornye/providers/lastfm_account_provider.dart';
 import 'package:mornye/screens/settings/playback_settings_page.dart';
 import 'package:mornye/services/playback_deck.dart';
 import 'package:mornye/theme/app_theme.dart';
@@ -17,6 +18,17 @@ import 'package:mornye/utils/desktop_platform.dart';
 import 'package:mornye/utils/settings_search_catalog.dart';
 import 'package:mornye/widgets/preview_button.dart';
 import 'package:mornye/widgets/settings_group.dart';
+
+class _AccountStorage implements LastfmAccountStorage {
+  @override
+  Future<String?> readSession() async => null;
+  @override
+  Future<String?> readData() async => null;
+  @override
+  Future<void> writeSession(String? value) async {}
+  @override
+  Future<void> writeData(String value) async {}
+}
 
 Future<ProviderContainer> _pumpPage(
   WidgetTester tester, {
@@ -27,8 +39,20 @@ Future<ProviderContainer> _pumpPage(
   tester.view.physicalSize = const Size(1200, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  final account = LastfmAccountController(
+    service: LastfmAccountService(
+      credentials: const LastfmAppCredentials(apiKey: '', sharedSecret: ''),
+    ),
+    storage: _AccountStorage(),
+    retryInterval: Duration.zero,
+  );
+  addTearDown(account.dispose);
+  await account.ready;
   final container = ProviderContainer(
-    overrides: [initialSettingsProvider.overrideWithValue(settings)],
+    overrides: [
+      initialSettingsProvider.overrideWithValue(settings),
+      lastfmAccountProvider.overrideWithValue(account),
+    ],
   );
   addTearDown(container.dispose);
   await tester.pumpWidget(

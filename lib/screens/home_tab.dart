@@ -898,7 +898,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
         !hasExploreContent &&
         !hasResults;
     final searchToolbar = _offersLibraryScope;
-    final waveHome = _showsHome && !hasSearchInput && !hasResults;
+    // Keep the input mounted when focus reveals recent searches or results.
+    final compactHomeHeader = _showsHome;
     final showLibraryResults = _searchingLibrary && hasSearchInput;
     // The library scope waits for input before showing local matches.
     final showLibraryPrompt = _searchingLibrary && !hasSearchInput;
@@ -972,7 +973,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
             slivers: [
               if (searchToolbar)
                 _buildDesktopSearchToolbarSliver()
-              else if (waveHome)
+              else if (compactHomeHeader)
                 SliverAppBar(
                   pinned: true,
                   automaticallyImplyLeading: false,
@@ -1001,7 +1002,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                   screenHeight: screenHeight,
                   showEmptyHomeState: showEmptyHomeState,
                 ),
-              if (showSearchBar && !searchToolbar && !waveHome)
+              if (showSearchBar && !searchToolbar && !compactHomeHeader)
                 _buildSearchBarSliver(
                   hasResults: hasResults,
                   showExplore: showFeedSurface,
@@ -1037,14 +1038,17 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               if (_showsHome && !hasActiveSearchSurface)
                 SliverToBoxAdapter(
-                  child: ListTile(
-                    leading: const Icon(Icons.auto_awesome),
-                    title: Text(context.l10n.recFlowTitle),
-                    subtitle: Text(context.l10n.recFlowSubtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const RecommendationFlowScreen(),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      leading: const Icon(Icons.auto_awesome),
+                      title: Text(context.l10n.recFlowTitle),
+                      subtitle: Text(context.l10n.recFlowSubtitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const RecommendationFlowScreen(),
+                        ),
                       ),
                     ),
                   ),

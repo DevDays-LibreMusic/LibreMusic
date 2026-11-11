@@ -664,43 +664,46 @@ class WaveHistorySection extends ConsumerWidget {
       waveSessionProvider.select((s) => s.recentContexts),
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.history),
-            title: Text(
-              waveText(context, 'История прослушиваний', 'Listening history'),
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const ListeningStatisticsScreen(),
-              ),
-            ),
-          ),
-          if (contexts.isNotEmpty)
-            Text(
-              waveText(context, 'Недавние волны', 'Recent waves'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          for (final wave in contexts.take(5))
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.waves),
+              leading: const Icon(Icons.history),
               title: Text(
-                wave.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                waveText(context, 'История прослушиваний', 'Listening history'),
               ),
-              subtitle: Text(waveKindLabel(context, wave.kind)),
-              trailing: const Icon(Icons.play_arrow),
-              onTap: () => ref.read(waveSessionProvider.notifier).start(wave),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ListeningStatisticsScreen(),
+                ),
+              ),
             ),
-        ],
+            if (contexts.isNotEmpty)
+              Text(
+                waveText(context, 'Недавние волны', 'Recent waves'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            for (final wave in contexts.take(5))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.waves),
+                title: Text(
+                  wave.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(waveKindLabel(context, wave.kind)),
+                trailing: const Icon(Icons.play_arrow),
+                onTap: () => ref.read(waveSessionProvider.notifier).start(wave),
+              ),
+          ],
+        ),
       ),
     );
   }

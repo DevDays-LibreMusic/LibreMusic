@@ -246,7 +246,7 @@ void main() {
       },
       skip: Platform.isWindows
           ? 'Creating symlinks requires Windows developer permissions'
-          : false,
+          : null,
     );
   }, skip: !enabled);
 }

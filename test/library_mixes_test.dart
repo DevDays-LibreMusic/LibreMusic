@@ -530,7 +530,7 @@ void main() {
       await db.execute("ATTACH DATABASE ':memory:' AS history_db");
       await db.execute('''
         CREATE TABLE history_db.history (
-          id TEXT PRIMARY KEY, file_path TEXT, track_name TEXT,
+          id TEXT PRIMARY KEY, file_path TEXT, origin_file_path TEXT, track_name TEXT,
           artist_name TEXT, album_name TEXT, genre TEXT, duration INTEGER,
           release_date TEXT, downloaded_at TEXT
         )

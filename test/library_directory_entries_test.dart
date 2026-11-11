@@ -14,7 +14,7 @@ void main() {
     await db.execute("ATTACH DATABASE ':memory:' AS history_db");
     await db.execute('''
       CREATE TABLE history_db.history (
-        id TEXT PRIMARY KEY, file_path TEXT, cover_url TEXT,
+        id TEXT PRIMARY KEY, file_path TEXT, origin_file_path TEXT, cover_url TEXT,
         disc_number INTEGER, track_number INTEGER, download_tree_uri TEXT,
         saf_relative_dir TEXT, saf_file_name TEXT
       )

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_service_platform_interface/audio_service_platform_interface.dart';
+import 'package:audio_service_platform_interface/method_channel_audio_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -16,6 +18,9 @@ void main() {
   test(
     'playback synchronization awaits the native acknowledgement and errors',
     () async {
+      final originalPlatform = AudioServicePlatform.instance;
+      AudioServicePlatform.instance = MethodChannelAudioService();
+      addTearDown(() => AudioServicePlatform.instance = originalPlatform);
       const client = MethodChannel(
         'com.ryanheise.audio_service.client.methods',
       );

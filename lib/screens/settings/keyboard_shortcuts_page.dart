@@ -49,6 +49,8 @@ class KeyboardShortcutsPage extends ConsumerWidget {
       (
         l10n.desktopMenuControls,
         [
+          (l10n.openAudioFiles, keys(DesktopCommand.openAudioFiles)),
+          (l10n.openAudioFolder, keys(DesktopCommand.openAudioFolder)),
           (l10n.desktopMenuPlayPause, keys(DesktopCommand.playPause)),
           (l10n.nowPlayingNextTrack, keys(DesktopCommand.next)),
           (l10n.nowPlayingPreviousTrack, keys(DesktopCommand.previous)),

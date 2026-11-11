@@ -29,6 +29,7 @@ void main() {
       path: '${directory.path}/local_library.db',
     );
     await createNativeLibraryFixture(db);
+    await db.execute('CREATE TABLE history_db.history (origin_file_path TEXT)');
     cue = await File(
       '${directory.path}/Album.cue',
     ).writeAsString('Original CUE');

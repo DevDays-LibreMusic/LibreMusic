@@ -72,6 +72,7 @@ Map<String, dynamic> _state({bool playing = true, int index = 0}) => {
 };
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late FakeLinkClient client;
   late ProviderContainer container;
   late FakeLibraryLookup lookup;
@@ -493,9 +494,14 @@ void main() {
         } else {
           reply.complete();
         }
-        await settle();
-        final item = (await playback.mediaItems.first)!;
-        expect(item.title, track.title);
+        final item = (await playback.mediaItems
+            .firstWhere((item) {
+              if (item?.title != track.title) return false;
+              return failure
+                  ? item?.artUri == null
+                  : item?.artUri != null && item?.artUri != before.artUri;
+            })
+            .timeout(const Duration(seconds: 2)))!;
         expect(item.artUri, failure ? isNull : isNot(before.artUri));
         expect((await playback.queues.first).single.artUri, item.artUri);
       },

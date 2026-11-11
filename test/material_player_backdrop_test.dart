@@ -57,10 +57,15 @@ Future<File> _writeNoise(Directory dir, {required bool translucent}) async {
 /// `ShaderMask` over the whole cover box. The blurred surface below it is
 /// the widget's own.
 class _WholeBoxMask extends StatelessWidget {
-  const _WholeBoxMask({required this.mediaItem, required this.showArtwork});
+  const _WholeBoxMask({
+    required this.mediaItem,
+    required this.showArtwork,
+    this.artworkOpacity = 1,
+  });
 
   final MediaItem mediaItem;
   final bool showArtwork;
+  final double artworkOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +91,7 @@ class _WholeBoxMask extends StatelessWidget {
               ? size.height * 0.56
               : size.width.clamp(0.0, size.height * 0.62),
           child: AnimatedOpacity(
-            opacity: showArtwork ? 1 : 0,
+            opacity: showArtwork ? artworkOpacity : 0,
             duration: motion,
             curve: Curves.easeInOutCubic,
             child: Hero(
@@ -182,10 +187,10 @@ Future<void> _waitForImages(WidgetTester tester) async {
   return (max: max, count: count);
 }
 
-/// What drawing the cover directly instead of through an 8-bit offscreen
-/// copy may change: rounding, by at most one level in a channel. With an
-/// opaque cover only a few channels are left where the offscreen's origin
-/// rounded a sample differently; a translucent cover blends every pixel.
+/// Opaque samples differ by at most one quantization level. Translucent
+/// samples also quantize their premultiplied color in the whole-box offscreen
+/// layer before blending with the background; the direct path omits that
+/// intermediate 8-bit round trip, so two levels can accumulate.
 void _expectRounding(
   Uint8List band,
   Uint8List whole, {
@@ -193,7 +198,7 @@ void _expectRounding(
   String? reason,
 }) {
   final difference = _difference(band, whole);
-  expect(difference.max, lessThanOrEqualTo(1), reason: reason);
+  expect(difference.max, lessThanOrEqualTo(opaque ? 1 : 2), reason: reason);
   if (opaque) {
     expect(difference.count, lessThan(band.length ~/ 5000), reason: reason);
   }
@@ -491,6 +496,30 @@ void main() {
       }
     });
   }
+
+  testWidgets(
+    'rounding tolerance rejects changed translucent artwork opacity',
+    (tester) async {
+      tester.view.physicalSize = const Size(160, 320);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_app(_bandMask(_item(_translucent), true)));
+      await _waitForImages(tester);
+      final band = await _capture(tester, 1);
+      await tester.pumpWidget(
+        _app(
+          _WholeBoxMask(
+            mediaItem: _item(_translucent),
+            showArtwork: true,
+            artworkOpacity: 0.98,
+          ),
+        ),
+      );
+      await _waitForImages(tester);
+      final wrongOpacity = await _capture(tester, 1);
+      expect(_difference(band, wrongOpacity).max, greaterThan(2));
+    },
+  );
 
   testWidgets('masks only the band of the cover the fade changes', (
     tester,
