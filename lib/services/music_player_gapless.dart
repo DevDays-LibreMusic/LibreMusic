@@ -272,6 +272,7 @@ class _MusicGapless {
         ? _nextIndex
         : handler._beginRepeatPass(_nextIndex);
     handler._index = index;
+    unawaited(handler._prepareDownloadWindow());
     final current = ++handler._playRequestGeneration;
     handler._serverDiedReloads = 0;
     handler._playbackAutomation.cancelPendingActions();

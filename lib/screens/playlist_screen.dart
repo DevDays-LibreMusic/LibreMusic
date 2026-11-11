@@ -11,6 +11,7 @@ import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
 import 'package:mornye/providers/extension_provider.dart';
+import 'package:mornye/providers/playback_provider.dart';
 import 'package:mornye/utils/image_cache_utils.dart';
 import 'package:mornye/utils/cover_art_utils.dart';
 import 'package:mornye/utils/adaptive_layout.dart';
@@ -376,6 +377,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen>
       actions: CollectionHeaderActions(
         tracks: _tracks,
         onLoveAll: () => loveAllTracks(this.context, ref, _tracks),
+        onPlay: () => _playAll(0),
         downloadIcon: Icons.download_rounded,
         tonalDownload: true,
         onDownloadAll: () => confirmDownloadAllDialog(
@@ -461,6 +463,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen>
           playlistPosition: index + 1,
           forceQualityPicker: forceQualityPicker,
         ),
+        onPlay: () => _playAll(index),
       );
       _desktopActivations
         ..clear()
@@ -503,6 +506,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen>
                       playlistPosition: index + 1,
                       forceQualityPicker: forceQualityPicker,
                     ),
+                onPlay: () => _playAll(index),
                 leadingArtwork: true,
                 leading: track.coverUrl != null
                     ? DownloadableCover(
@@ -536,6 +540,20 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen>
         }, childCount: _tracks.length),
       ),
     );
+  }
+
+  Future<void> _playAll(int startIndex) async {
+    if (_tracks.isEmpty) return;
+    try {
+      await ref
+          .read(playbackProvider.notifier)
+          .playTrackList(_tracks, startIndex: startIndex);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.snackbarCannotOpenFile('$error'))),
+      );
+    }
   }
 
   void _downloadTrack(

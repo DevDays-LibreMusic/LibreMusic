@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart' show AudioServiceRepeatMode;
 import 'package:path_provider/path_provider.dart';
 import 'package:mornye/services/cover_store.dart';
+import 'package:mornye/services/download_playback.dart';
 import 'package:mornye/services/music_player_runtime.dart';
 import 'package:mornye/services/playable_media.dart';
 import 'package:mornye/utils/logger.dart';
@@ -107,6 +108,8 @@ prepareRestoredPlaybackMedia(
       try {
         replacement = await recoverSource?.call(media);
       } catch (error) {
+        // In-memory download references cannot be retried after process restart.
+        if (isDownloadPlaybackSource(media.source)) return null;
         // Keep an inconclusive entry for retry instead of failing the whole
         // restore or silently removing a song on an unavailable volume.
         _log.w(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mornye/providers/wave_session_provider.dart';
+import 'package:mornye/providers/lastfm_account_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mornye/l10n/app_localizations.dart';
@@ -73,6 +75,22 @@ void main() {
         );
         // Rows take taps again once the scroll comes to rest.
         await tester.pump(const Duration(seconds: 1));
+        // Home sections animate into place below the wave card. Align the tap
+        // after that layout settles, not at its intermediate scroll position.
+        await Scrollable.ensureVisible(tester.element(title), alignment: 0.5);
+        await tester.pump(const Duration(seconds: 1));
+        final tapTarget = mornye
+            ? find.descendant(
+                of: find
+                    .ancestor(
+                      of: find.byType(MornyeMixBanner),
+                      matching: find.byType(Stack),
+                    )
+                    .first,
+                matching: find.byType(InkWell),
+              )
+            : title;
+        expect(tapTarget.hitTestable(), findsOneWidget);
         expect(find.text('Tyler, The Creator and Frank Ocean'), findsOneWidget);
         if (mornye) {
           expect(find.text('Top Picks for You'), findsOneWidget);
@@ -87,7 +105,7 @@ void main() {
           expect(find.byType(MornyeMixBanner), findsNothing);
         }
 
-        await tester.tap(title);
+        await tester.tap(tapTarget);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 600));
         expect(find.byType(LibraryMixScreen), findsOneWidget);
@@ -348,6 +366,10 @@ Future<void> _pumpHome(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        waveSessionProvider.overrideWith(_IdleWave.new),
+        lastfmAccountStateProvider.overrideWith(
+          (ref) => Stream.value(const LastfmAccountState(appConfigured: true)),
+        ),
         settingsProvider.overrideWith(
           () => FixedSettingsNotifier(
             const AppSettings(
@@ -420,4 +442,9 @@ class _History extends DownloadHistoryNotifier {
 class _Recent extends RecentAccessNotifier {
   @override
   RecentAccessState build() => const RecentAccessState(isLoaded: true);
+}
+
+class _IdleWave extends WaveSessionController {
+  @override
+  WaveSessionState build() => const WaveSessionState(loaded: true);
 }

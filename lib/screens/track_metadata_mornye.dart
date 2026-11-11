@@ -151,6 +151,25 @@ extension _TrackMetadataMornye on _TrackMetadataScreenState {
               ),
             ),
             SliverToBoxAdapter(
+              child: WaveStartButton(
+                wave: WaveContext(
+                  kind: WaveKind.track,
+                  title: trackName,
+                  artist: artistName,
+                  track: Track(
+                    id: _downloadItem?.spotifyId ?? _itemId,
+                    name: trackName,
+                    artistName: artistName,
+                    albumName: albumName,
+                    duration: duration ?? 0,
+                    isrc: isrc,
+                    coverUrl: _coverUrl,
+                    source: _downloadItem?.service,
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(

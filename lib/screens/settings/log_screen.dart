@@ -6,7 +6,8 @@ import 'package:mornye/widgets/app_content_card.dart';
 import 'package:mornye/widgets/app_crash_banner.dart';
 import 'package:mornye/widgets/expressive_button.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
+import 'package:share_plus/share_plus.dart' show SharePlus;
+import 'package:mornye/services/log_share_service.dart';
 import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/utils/logger.dart';
 import 'package:mornye/widgets/settings_group.dart';
@@ -215,21 +216,33 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
-  void _shareLogs() async {
-    final subject = '${context.l10n.appName} Logs';
-    final logs = await LogBuffer().exportWithDeviceInfo();
-    SharePlus.instance.share(ShareParams(text: logs, subject: subject));
-  }
+  Future<void> _shareLogs() =>
+      _shareLogFile(() => LogBuffer().exportWithDeviceInfo());
 
-  void _shareSelectedLogs() {
+  Future<void> _shareSelectedLogs() async {
     final selectedInUserOrder = _selectedEntries.toList(growable: false);
     if (selectedInUserOrder.isEmpty) return;
-    SharePlus.instance.share(
-      ShareParams(
-        text: formatLogEntries(selectedInUserOrder),
-        subject: '${context.l10n.appName} Logs',
-      ),
-    );
+    await _shareLogFile(() async => formatLogEntries(selectedInUserOrder));
+  }
+
+  Future<void> _shareLogFile(Future<String> Function() export) async {
+    try {
+      final params = await LogShareService.prepare(await export());
+      if (!mounted) return;
+      await SharePlus.instance.share(params);
+    } on Object {
+      if (!mounted) return;
+      final russian = Localizations.localeOf(context).languageCode == 'ru';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            russian
+                ? 'Не удалось подготовить или отправить файл журнала. Попробуйте снова.'
+                : 'Could not prepare or share the log file. Please try again.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _clearLogs() async {

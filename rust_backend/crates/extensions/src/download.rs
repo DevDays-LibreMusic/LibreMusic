@@ -166,6 +166,7 @@ pub(crate) fn download(
         )
     })?;
     options.item.start();
+    options.item.playback(&path.display());
     options.item.initial(output.state.bytes, output.state.total);
     let reporter = options
         .item

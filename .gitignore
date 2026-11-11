@@ -15,6 +15,7 @@ Desktop.ini
 .claude/settings.local.json
 CLAUDE.md
 AGENTS.md
+!/AGENTS.md
 
 # Local release notes, screenshots and promo assets
 /output/
@@ -97,7 +98,10 @@ DerivedData/
 /tool/
 
 # Local documentation, migration archives, fixtures, and benchmark evidence.
-/docs/
+/docs/*
+!/docs/requirements/
+/docs/requirements/*
+!/docs/requirements/lastfm-wave.md
 
 # Temporary files and logs
 /.tmp/
@@ -112,3 +116,5 @@ NUL
 *.log
 hs_err_*.log
 flutter_*.log
+
+/scripts/__pycache__/

@@ -1,3 +1,4 @@
+import 'package:mornye/services/playback_diagnostics.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:convert';
@@ -588,6 +589,21 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       }
     }
 
+    PlaybackDiagnostics.track(
+      'download_request',
+      track,
+      origin: 'download',
+      attempt: item.id,
+    );
+    PlaybackDiagnostics.event(
+      'download_provider',
+      attempt: item.id,
+      fields: {
+        'provider': item.service,
+        'trackId': _knownProviderTrackId(track, item.service),
+        'source': track.source ?? '',
+      },
+    );
     return DownloadRequestPayload(
       isrc: track.isrc ?? '',
       service: item.service,
@@ -770,6 +786,16 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       networkDownloadFolder: settings.networkDownloadFolder,
     );
 
+    PlaybackDiagnostics.event(
+      'manual_download_enqueued',
+      attempt: PlaybackDiagnostics.traceForTrack(track),
+      fields: {
+        'itemId': id,
+        'trackId': track.id,
+        'source': track.source ?? '',
+        'provider': item.service,
+      },
+    );
     state = state.copyWith(items: [...state.items, item]);
     _saveQueueToStorage();
 
@@ -809,14 +835,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
   }
 
-  void addMultipleToQueue(
+  List<String> addMultipleToQueue(
     List<Track> tracks,
     String service, {
     String? qualityOverride,
     String? playlistName,
     List<int?>? playlistPositions,
   }) {
-    addBatchesToQueue(
+    return addBatchesToQueue(
       [
         DownloadQueueBatch(
           tracks: tracks,
@@ -831,12 +857,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
   /// Publishes several independent album/playlist batches together. Keep each
   /// group's artist normalization, batch flag and playlist positions separate.
-  void addBatchesToQueue(
+  List<String> addBatchesToQueue(
     List<DownloadQueueBatch> batches,
     String service, {
     String? qualityOverride,
   }) {
-    if (batches.isEmpty) return;
+    if (batches.isEmpty) return const [];
     final settings = ref.read(settingsProvider);
     String? normalizedService;
     final takenIds = state.items.map((item) => item.id).toSet();
@@ -883,6 +909,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (!state.isProcessing) {
       Future.microtask(() => _processQueue());
     }
+    return [for (final item in newItems) item.id];
   }
 
   void updateItemStatus(

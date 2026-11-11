@@ -22,6 +22,14 @@ impl ItemProgressTarget {
         }
     }
 
+    pub fn playback(&self, target: &str) {
+        if self.track && !self.id.is_empty() {
+            let _ = self
+                .registry
+                .set_playback_path(&self.id, &format!("{target}.partial"));
+        }
+    }
+
     pub fn set(&self, progress: f64, bytes: u64, total: i64) {
         if self.track && !self.id.is_empty() {
             let _ = self

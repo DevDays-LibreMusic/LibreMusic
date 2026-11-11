@@ -55,6 +55,8 @@ class PlayerQueueSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final queue = ref.watch(playQueueProvider).value ?? const [];
     final current = ref.watch(currentMediaItemProvider).value;
+    final currentIndex = ref.watch(currentQueueIndexProvider);
+    final russian = Localizations.localeOf(context).languageCode == 'ru';
     final controller = ref.read(musicPlayerControllerProvider);
     final textTheme = Theme.of(context).textTheme;
     final expressive = materialExpressiveEnabled(context);
@@ -165,72 +167,93 @@ class PlayerQueueSheet extends ConsumerWidget {
                   key: ObjectKey(item),
                   enabled: !isCurrent,
                   onRemove: () => controller.removeQueuedItem(item),
-                  child: ListTile(
-                    selected: isCurrent,
-                    selectedTileColor: colorScheme.secondaryContainer
-                        .withValues(alpha: 0.55),
-                    shape: expressive
-                        ? RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(_rowRadius),
-                          )
-                        : null,
-                    contentPadding: const EdgeInsetsDirectional.only(
-                      start: 16,
-                      end: 4,
-                    ),
-                    leading: TweenAnimationBuilder<double>(
-                      tween: Tween(end: expressive && isCurrent ? 22 : 8),
-                      duration: artworkMotion.duration,
-                      curve: artworkMotion.curve,
-                      builder: (context, radius, child) => ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          radius.clamp(0.0, 22.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (i == 0 || i == currentIndex || i == currentIndex + 1)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                          child: Text(
+                            i < currentIndex
+                                ? (russian
+                                      ? 'Ранее в очереди'
+                                      : 'Earlier in queue')
+                                : i == currentIndex
+                                ? (russian ? 'Сейчас играет' : 'Now playing')
+                                : context.l10n.nowPlayingUpNext,
+                            style: textTheme.labelLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                        child: child,
-                      ),
-                      child: SizedBox.square(
-                        dimension: 44,
-                        child: PlayerQueueArtwork(
-                          item: item,
-                          colorScheme: colorScheme,
-                          cacheWidth: 132,
-                          iconSize: 22,
+                      ListTile(
+                        selected: isCurrent,
+                        selectedTileColor: colorScheme.secondaryContainer
+                            .withValues(alpha: 0.55),
+                        shape: expressive
+                            ? RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(_rowRadius),
+                              )
+                            : null,
+                        contentPadding: const EdgeInsetsDirectional.only(
+                          start: 16,
+                          end: 4,
                         ),
-                      ),
-                    ),
-                    title: Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodyLarge?.copyWith(
-                        fontWeight: isCurrent
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isCurrent
-                            ? colorScheme.primary
-                            : colorScheme.onSurface,
-                      ),
-                    ),
-                    subtitle: Text(
-                      item.artist ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: ReorderableDragStartListener(
-                      index: i,
-                      // 24dp glyph plus padding gives a 48dp drag target.
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: AppIcon(
-                          Icons.drag_handle,
-                          color: colorScheme.onSurfaceVariant,
+                        leading: TweenAnimationBuilder<double>(
+                          tween: Tween(end: expressive && isCurrent ? 22 : 8),
+                          duration: artworkMotion.duration,
+                          curve: artworkMotion.curve,
+                          builder: (context, radius, child) => ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              radius.clamp(0.0, 22.0),
+                            ),
+                            child: child,
+                          ),
+                          child: SizedBox.square(
+                            dimension: 44,
+                            child: PlayerQueueArtwork(
+                              item: item,
+                              colorScheme: colorScheme,
+                              cacheWidth: 132,
+                              iconSize: 22,
+                            ),
+                          ),
                         ),
+                        title: Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodyLarge?.copyWith(
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isCurrent
+                                ? colorScheme.primary
+                                : colorScheme.onSurface,
+                          ),
+                        ),
+                        subtitle: Text(
+                          item.artist ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: ReorderableDragStartListener(
+                          index: i,
+                          // 24dp glyph plus padding gives a 48dp drag target.
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: AppIcon(
+                              Icons.drag_handle,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        onTap: () => controller.jumpTo(i),
                       ),
-                    ),
-                    onTap: () => controller.jumpTo(i),
+                    ],
                   ),
                 );
               },

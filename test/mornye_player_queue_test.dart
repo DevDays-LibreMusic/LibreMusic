@@ -74,7 +74,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Previous'), findsNothing);
-      expect(find.text('Current'), findsNothing);
+      expect(find.text('Current'), findsOneWidget);
+      expect(find.text('Earlier in queue'), findsOneWidget);
+      await tester.tap(find.text('Earlier in queue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Previous'));
+      expect(player.jumpedTo, 0);
+      await tester.tap(find.text('Earlier in queue'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Autoplay off'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Autoplay on'), findsOneWidget);
@@ -88,6 +95,7 @@ void main() {
       await tester.tap(find.byTooltip('AutoMix on'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('AutoMix off'), findsOneWidget);
+      await tester.ensureVisible(find.text('Last'));
       await tester.tap(find.text('Last'));
       expect(player.jumpedTo, 3);
       final firstHandle = find.byType(ReorderableDragStartListener).first;

@@ -19,6 +19,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mornye/controllers/player_metadata_controller.dart';
 import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/models/track.dart';
+import 'package:mornye/models/library_database_models.dart';
+import 'package:mornye/screens/extension_collection_screens.dart';
 import 'package:mornye/providers/library_collections_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
@@ -62,6 +64,7 @@ import 'package:mornye/widgets/player_metadata_title.dart';
 import 'package:mornye/widgets/player_playback_controls.dart';
 import 'package:mornye/widgets/playback_seek_slider.dart';
 import 'package:mornye/widgets/player_artwork.dart';
+import 'package:mornye/widgets/player_queue_sheet.dart';
 
 import 'support/app_icon_finder.dart';
 
@@ -89,6 +92,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(backendChannel, (call) async {
           if (call.method == 'setScreenAwake') return null;
+          if (call.method == 'getExtensionAlbum') return null;
           if (call.method == 'runNativeDataJob') {
             final arguments = (call.arguments as Map).cast<String, dynamic>();
             final request =
@@ -179,6 +183,7 @@ void main() {
     MusicPlayerController? controller,
     List<MediaItem> queue = const [],
     RemotePlayback? remote,
+    Track? collectionTrack,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -202,14 +207,16 @@ void main() {
             (ref, source) => Completer<VideoPlayerController>().future,
           ),
           playerCollectionTrackProvider.overrideWith(
-            (ref, item) async => Track(
-              id: item.id,
-              name: item.title,
-              artistName: item.artist ?? '',
-              albumName: item.album ?? '',
-              duration: item.duration?.inSeconds ?? 0,
-              source: 'local',
-            ),
+            (ref, item) async =>
+                collectionTrack ??
+                Track(
+                  id: item.id,
+                  name: item.title,
+                  artistName: item.artist ?? '',
+                  albumName: item.album ?? '',
+                  duration: item.duration?.inSeconds ?? 0,
+                  source: 'local',
+                ),
           ),
           libraryCollectionsProvider.overrideWith(_TestCollections.new),
           playbackStateProvider.overrideWith(
@@ -374,6 +381,40 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'Material phone exposes favorite and scrolls to track wave without opening queue',
+    (tester) async {
+      await pumpNowPlaying(
+        tester,
+        theme: AppTheme.light(),
+        size: const Size(360, 750),
+      );
+      mediaItems.add(item('first'));
+      await settlePlayer(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(NowPlayingScreen)),
+      );
+      container
+          .read(settingsProvider.notifier)
+          .setPlayerCoverStyle('fullscreen');
+      await settlePlayer(tester);
+
+      expect(
+        find.byType(MornyePlayerFavoriteButton).hitTestable(),
+        findsOneWidget,
+      );
+      expect(find.text('Wave by track').hitTestable(), findsNothing);
+      await tester.drag(
+        find.byType(PlayerMetadataTitle),
+        const Offset(0, -350),
+      );
+      await settlePlayer(tester);
+      expect(find.byType(PlayerQueueSheet), findsNothing);
+      expect(find.text('Wave by track').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('Material track titles never overlap during rapid skips', (
     tester,
@@ -654,6 +695,14 @@ void main() {
           .read(settingsProvider.notifier)
           .setPlayerCoverStyle('fullscreen');
       await settlePlayer(tester);
+      final toolbar = tester.widget<AppBar>(find.byType(AppBar).first);
+      expect(toolbar.foregroundColor, Colors.white);
+      final overWhiteArt = Color.alphaBlend(
+        toolbar.backgroundColor!,
+        Colors.white,
+      );
+      final whiteTextContrast = 1.05 / (overWhiteArt.computeLuminance() + .05);
+      expect(whiteTextContrast, greaterThanOrEqualTo(4.5));
       if (mornye) {
         expect(
           tester
@@ -819,11 +868,27 @@ void main() {
       await gesture.up();
       await settlePlayer(tester);
       expect(controller.selected, [1]);
-      expect(find.text('Second').hitTestable(), findsOneWidget);
+      expect(
+        find
+            .descendant(
+              of: find.byType(PlayerMetadataTitle),
+              matching: find.text('Second'),
+            )
+            .hitTestable(),
+        findsOneWidget,
+      );
       await tester.drag(cover, const Offset(110, 0));
       await settlePlayer(tester);
       expect(controller.selected, [1, 0]);
-      expect(find.text('First').hitTestable(), findsOneWidget);
+      expect(
+        find
+            .descendant(
+              of: find.byType(PlayerMetadataTitle),
+              matching: find.text('First'),
+            )
+            .hitTestable(),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     });
   }
@@ -840,7 +905,16 @@ void main() {
         );
         mediaItems.add(item('first'));
         await settlePlayer(tester);
-        final title = tester.getTopLeft(find.text('First').hitTestable()).dy;
+        final title = tester
+            .getTopLeft(
+              find
+                  .descendant(
+                    of: find.byType(PlayerMetadataTitle),
+                    matching: find.text('First'),
+                  )
+                  .hitTestable(),
+            )
+            .dy;
         final transport = tester
             .getCenter(
               find.byWidgetPredicate(
@@ -1098,7 +1172,12 @@ void main() {
     final background = tester.widget<MornyePlayerBackground>(
       find.byType(MornyePlayerBackground),
     );
-    final title = find.text('First').hitTestable();
+    final title = find
+        .descendant(
+          of: find.byType(PlayerMetadataTitle),
+          matching: find.text('First'),
+        )
+        .hitTestable();
     final bounds = tester.getRect(title);
     final contrast = tester.widget<MornyeArtworkContrast>(
       find.byType(MornyeArtworkContrast),
@@ -1539,7 +1618,14 @@ void main() {
         );
         final state = tester.state<ScrollableState>(scrollable);
         final initialOffset = state.position.pixels;
-        final headerTop = tester.getTopLeft(find.text('Second')).dy;
+        final headerTop = tester
+            .getTopLeft(
+              find.descendant(
+                of: find.byType(PlayerMetadataTitle),
+                matching: find.text('Second'),
+              ),
+            )
+            .dy;
         final transport = find.byWidgetPredicate(
           (widget) =>
               widget is MornyePlaybackButton &&
@@ -1593,7 +1679,17 @@ void main() {
           expect(tester.state<ScrollableState>(scrollable), same(state));
           expect(state.position.pixels, closeTo(restoredOffset, 0.01));
         }
-        expect(tester.getTopLeft(find.text('Second')).dy, headerTop);
+        expect(
+          tester
+              .getTopLeft(
+                find.descendant(
+                  of: find.byType(PlayerMetadataTitle),
+                  matching: find.text('Second'),
+                ),
+              )
+              .dy,
+          headerTop,
+        );
         expect(transport.hitTestable(), findsNWidgets(3));
         await touch.up();
         await settlePlayer(tester);
@@ -2156,7 +2252,14 @@ void main() {
       );
       mediaItems.add(item('first'));
       await settlePlayer(tester);
-      await tester.tap(find.text('First').hitTestable());
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(PlayerMetadataTitle),
+              matching: find.text('First'),
+            )
+            .hitTestable(),
+      );
       await settlePlayer(tester);
       expect(find.text('Go to Artist'), findsOneWidget);
       expect(find.text('Go to Album'), findsOneWidget);
@@ -2253,6 +2356,11 @@ void main() {
       await settlePlayer(tester);
       await tester.tap(findAppIcon(CupertinoIcons.ellipsis).hitTestable());
       await settlePlayer(tester);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Details')),
+        alignment: 0.5,
+      );
+      await settlePlayer(tester);
       await tester.tap(find.text('Details'));
       await settlePlayer(tester);
       final sheet = find.byType(MornyePlayerDetailsSheet);
@@ -2293,7 +2401,7 @@ void main() {
   );
 
   testWidgets(
-    'Mornye star shares Library favorites across tracks and compact headers',
+    'Mornye heart shares Library favorites across tracks and compact headers',
     (tester) async {
       await pumpNowPlaying(
         tester,
@@ -2305,12 +2413,12 @@ void main() {
       final container = ProviderScope.containerOf(
         tester.element(find.byType(NowPlayingScreen)),
       );
-      final star = findAppIcon(CupertinoIcons.star).hitTestable();
+      final star = findAppIcon(CupertinoIcons.heart).hitTestable();
       expect(star, findsOneWidget);
       await tester.tap(star);
       await settlePlayer(tester);
       expect(
-        findAppIcon(CupertinoIcons.star_fill).hitTestable(),
+        findAppIcon(CupertinoIcons.heart_fill).hitTestable(),
         findsOneWidget,
       );
       expect(
@@ -2334,16 +2442,16 @@ void main() {
       await tester.tap(findAppIcon(CupertinoIcons.list_bullet));
       await settlePlayer(tester);
       expect(
-        findAppIcon(CupertinoIcons.star_fill).hitTestable(),
+        findAppIcon(CupertinoIcons.heart_fill).hitTestable(),
         findsOneWidget,
       );
       mediaItems.add(item('second'));
       await settlePlayer(tester);
-      expect(findAppIcon(CupertinoIcons.star).hitTestable(), findsOneWidget);
+      expect(findAppIcon(CupertinoIcons.heart).hitTestable(), findsOneWidget);
       mediaItems.add(item('first'));
       await settlePlayer(tester);
       expect(
-        findAppIcon(CupertinoIcons.star_fill).hitTestable(),
+        findAppIcon(CupertinoIcons.heart_fill).hitTestable(),
         findsOneWidget,
       );
 
@@ -2357,7 +2465,7 @@ void main() {
           .read(libraryCollectionsProvider.notifier)
           .toggleLoved(track);
       await settlePlayer(tester);
-      expect(findAppIcon(CupertinoIcons.star).hitTestable(), findsOneWidget);
+      expect(findAppIcon(CupertinoIcons.heart).hitTestable(), findsOneWidget);
       expect(
         find.byType(MornyePlayerFavoriteButton).hitTestable(),
         findsOneWidget,
@@ -3252,7 +3360,12 @@ void main() {
       expect(artRect.width, closeTo(artRect.height, 0.1));
       expect(artRect.width, greaterThan(140));
       expect(artRect.top, greaterThanOrEqualTo(36));
-      final header = find.text('First').hitTestable();
+      final header = find
+          .descendant(
+            of: find.byType(PlayerMetadataTitle),
+            matching: find.text('First'),
+          )
+          .hitTestable();
       final lyric = find.text('First lyric').hitTestable();
       expect(header, findsOneWidget);
       expect(lyric, findsNothing);
@@ -5151,6 +5264,45 @@ void main() {
     expect(tester.getRect(lyric).left, closeTo(24, 1));
   });
 
+  testWidgets('Now Playing opens the known catalog album without name search', (
+    tester,
+  ) async {
+    const track = Track(
+      id: 'deezer:345',
+      name: 'Use Me To Use You',
+      artistName: 'Trapt',
+      albumName: 'Someone In Control',
+      albumId: 'deezer:340914',
+      source: 'deezer',
+      duration: 180,
+    );
+    await pumpNowPlaying(
+      tester,
+      controller: _NoLocalAlbumPlayer(),
+      collectionTrack: track,
+    );
+    mediaItems.add(
+      const MediaItem(
+        id: 'cached-wave',
+        title: 'Use Me To Use You',
+        artist: 'Trapt',
+        album: 'Someone In Control',
+        extras: {'source': ''},
+      ),
+    );
+    await settlePlayer(tester);
+    await tester.tap(findAppIcon(Icons.more_vert));
+    await settlePlayer(tester);
+    await tester.tap(find.text('Go to Album'));
+    await settlePlayer(tester);
+    final album = tester.widget<ExtensionAlbumScreen>(
+      find.byType(ExtensionAlbumScreen),
+    );
+    expect(album.albumId, 'deezer:340914');
+    expect(album.extensionId, 'deezer');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Now Playing menu exposes Go to Album when album is known', (
     tester,
   ) async {
@@ -5336,4 +5488,10 @@ class _TestCollections extends LibraryCollectionsNotifier {
     );
     return added;
   }
+}
+
+class _NoLocalAlbumPlayer extends MusicPlayerController {
+  @override
+  Future<({LocalLibraryItem item, List<LocalLibraryItem> tracks})?>
+  localAlbumFor(String mediaId) async => null;
 }

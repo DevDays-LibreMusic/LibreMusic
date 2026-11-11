@@ -1,3 +1,5 @@
+import 'package:mornye/widgets/wave_controls.dart';
+import 'package:mornye/providers/wave_session_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -165,6 +167,40 @@ List<List<ContextMenuAction>> trackOptionMenuGroups(
   }
 
   return [
+    [
+      ContextMenuAction(
+        icon: Icons.waves,
+        label: waveText(context, 'Волна по треку', 'Wave by track'),
+        onSelected: () => ref
+            .read(waveSessionProvider.notifier)
+            .start(
+              WaveContext(
+                kind: WaveKind.track,
+                title: track.name,
+                artist: track.artistName,
+                track: track,
+              ),
+            ),
+      ),
+      ContextMenuAction(
+        icon: Icons.music_off,
+        label: waveText(
+          context,
+          'Не предлагать этот трек',
+          'Do not recommend this track',
+        ),
+        onSelected: () => excludeFromWave(root, ref, track, artist: false),
+      ),
+      ContextMenuAction(
+        icon: Icons.person_off,
+        label: waveText(
+          context,
+          'Не предлагать исполнителя',
+          'Do not recommend this artist',
+        ),
+        onSelected: () => excludeFromWave(root, ref, track, artist: true),
+      ),
+    ],
     [
       ContextMenuAction(
         icon: Icons.headphones_outlined,
@@ -354,6 +390,50 @@ class _TrackOptionsSheet extends ConsumerWidget {
         ],
         groups: [
           [
+            MornyeMenuAction(
+              icon: Icons.waves,
+              label: waveText(context, 'Волна по треку', 'Wave by track'),
+              onPressed: () {
+                final controller = ref.read(waveSessionProvider.notifier);
+                Navigator.pop(context);
+                controller.start(
+                  WaveContext(
+                    kind: WaveKind.track,
+                    title: track.name,
+                    artist: track.artistName,
+                    track: track,
+                  ),
+                );
+              },
+            ),
+            MornyeMenuAction(
+              icon: Icons.music_off,
+              label: waveText(
+                context,
+                'Не предлагать этот трек',
+                'Do not recommend this track',
+              ),
+              onPressed: () {
+                final root = Navigator.of(context, rootNavigator: true).context;
+                excludeFromWave(root, ref, track, artist: false);
+                Navigator.pop(context);
+              },
+            ),
+            MornyeMenuAction(
+              icon: Icons.person_off,
+              label: waveText(
+                context,
+                'Не предлагать исполнителя',
+                'Do not recommend this artist',
+              ),
+              onPressed: () {
+                final root = Navigator.of(context, rootNavigator: true).context;
+                excludeFromWave(root, ref, track, artist: true);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+          [
             if (qualityVariantAction == QualityVariantMenuAction.playLocal)
               MornyeMenuAction(
                 icon: CupertinoIcons.play,
@@ -515,6 +595,47 @@ class _TrackOptionsSheet extends ConsumerWidget {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
 
+              WaveStartButton(
+                onStarted: () => Navigator.pop(context),
+                wave: WaveContext(
+                  kind: WaveKind.track,
+                  title: track.name,
+                  artist: track.artistName,
+                  track: track,
+                ),
+              ),
+              _OptionTile(
+                icon: Icons.music_off,
+                title: waveText(
+                  context,
+                  'Не предлагать этот трек',
+                  'Do not recommend this track',
+                ),
+                onTap: () {
+                  final root = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  excludeFromWave(root, ref, track, artist: false);
+                  Navigator.pop(context);
+                },
+              ),
+              _OptionTile(
+                icon: Icons.person_off,
+                title: waveText(
+                  context,
+                  'Не предлагать исполнителя',
+                  'Do not recommend this artist',
+                ),
+                onTap: () {
+                  final root = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  excludeFromWave(root, ref, track, artist: true);
+                  Navigator.pop(context);
+                },
+              ),
               _OptionTile(
                 icon: Icons.headphones_outlined,
                 title: context.l10n.musicServerListen,

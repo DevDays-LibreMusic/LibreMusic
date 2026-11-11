@@ -415,6 +415,7 @@ class _MusicAutoMix {
           ? _nextIndex
           : handler._beginRepeatPass(_nextIndex);
       handler._index = nextIndex;
+      unawaited(handler._prepareDownloadWindow());
       handler._playRequestGeneration++;
       handler._recordPlayHistory(nextIndex);
       handler._normalizationVolume = _incomingVolume;

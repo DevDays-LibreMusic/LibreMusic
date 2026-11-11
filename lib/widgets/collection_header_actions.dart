@@ -22,10 +22,12 @@ class CollectionHeaderActions extends StatelessWidget {
     required this.addToPlaylistIcon,
     required this.onAddToPlaylist,
     this.tonalDownload = false,
+    this.onPlay,
   });
 
   final List<Track> tracks;
   final VoidCallback onLoveAll;
+  final VoidCallback? onPlay;
 
   /// The Material download glyph; Mornye uses its filled arrow.
   final IconData downloadIcon;
@@ -69,28 +71,36 @@ class CollectionHeaderActions extends StatelessWidget {
       tooltip: context.l10n.tooltipAddToPlaylist,
       onPressed: enabled ? onAddToPlaylist : null,
     );
+    final play = HeaderCircleButton(
+      icon: mornye ? CupertinoIcons.play_fill : Icons.play_arrow_rounded,
+      tooltip: context.l10n.tooltipPlay,
+      onPressed: enabled ? onPlay : null,
+    );
+    final children = [love, if (onPlay != null) play, download, addToPlaylist];
     if (isDesktopPlatform) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 10,
-        children: [love, download, addToPlaylist],
+        children: children,
       );
     }
     if (mornye) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          love,
-          const SizedBox(width: 16),
-          Flexible(child: SizedBox(width: 172, child: download)),
-          const SizedBox(width: 16),
-          addToPlaylist,
+          for (var index = 0; index < children.length; index++) ...[
+            if (index > 0) SizedBox(width: onPlay == null ? 16 : 8),
+            if (identical(children[index], download))
+              Flexible(child: SizedBox(width: 172, child: download))
+            else
+              children[index],
+          ],
         ],
       );
     }
     return ExpressiveButtonGroup(
-      flexible: const {1},
-      children: [love, download, addToPlaylist],
+      flexible: {children.indexOf(download)},
+      children: children,
     );
   }
 }

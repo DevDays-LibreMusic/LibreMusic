@@ -24,6 +24,8 @@ pub struct ItemProgress {
     pub status: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     pub stage: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub playback_path: String,
     #[serde(skip)]
     revision: i64,
 }
@@ -37,6 +39,7 @@ struct BridgeState {
     downloading: bool,
     status: String,
     stage: String,
+    playback_path: String,
 }
 
 impl ItemProgress {
@@ -59,6 +62,7 @@ impl ItemProgress {
             downloading: self.is_downloading,
             status: self.status.clone(),
             stage: self.stage.clone(),
+            playback_path: self.playback_path.clone(),
         }
     }
 
@@ -204,6 +208,7 @@ impl ProgressRegistry {
                 is_downloading: false,
                 status: "preparing".into(),
                 stage: String::new(),
+                playback_path: String::new(),
                 revision,
             },
         );
@@ -239,6 +244,10 @@ impl ProgressRegistry {
             item.status = "preparing".into();
             item.stage = stage.to_owned();
         })
+    }
+
+    pub fn set_playback_path(&self, id: &str, path: &str) -> Result<(), ProgressError> {
+        self.update(id, |item| item.playback_path = path.to_owned())
     }
 
     pub fn downloading(&self, id: &str) -> Result<(), ProgressError> {
@@ -456,6 +465,28 @@ mod batch_tests {
         let delta: Value = serde_json::from_str(&registry.wait_delta(seq, 1).unwrap()).unwrap();
         assert_eq!(delta["removed"], json!(["", "b"]));
         assert_eq!(delta["items"]["a"]["status"], "preparing");
+    }
+
+    #[test]
+    fn playback_path_is_published_with_download_progress() {
+        let registry = ProgressRegistry::new();
+        registry.start("track").unwrap();
+        let seq = registry.shared.state.lock().unwrap().seq;
+        registry
+            .set_playback_path("track", "/music/song.flac.partial")
+            .unwrap();
+        registry.set_progress("track", 0.25, 10, 40).unwrap();
+
+        let snapshot: Value = serde_json::from_str(&registry.snapshot().unwrap()).unwrap();
+        assert_eq!(
+            snapshot["items"]["track"]["playback_path"],
+            "/music/song.flac.partial"
+        );
+        let delta: Value = serde_json::from_str(&registry.wait_delta(seq, 1).unwrap()).unwrap();
+        assert_eq!(
+            delta["items"]["track"]["playback_path"],
+            "/music/song.flac.partial"
+        );
     }
 
     #[test]

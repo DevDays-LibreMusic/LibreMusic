@@ -1,3 +1,4 @@
+import 'package:mornye/providers/wave_session_provider.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
@@ -40,7 +41,12 @@ class _MornyePlayerFavoriteButtonState
       if (ref.read(provider).hasError) ref.invalidate(provider);
       final track = await ref.read(provider.future);
       if (!mounted) return;
-      await ref.read(libraryCollectionsProvider.notifier).toggleLoved(track);
+      await ref
+          .read(waveSessionProvider.notifier)
+          .setLoved(
+            track,
+            !ref.read(libraryCollectionsProvider).isLoved(track),
+          );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,7 +74,7 @@ class _MornyePlayerFavoriteButtonState
     return Semantics(
       toggled: loved,
       child: MornyePlaybackButton(
-        icon: loved ? CupertinoIcons.star_fill : CupertinoIcons.star,
+        icon: loved ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
         tooltip: loved
             ? context.l10n.trackOptionRemoveFromLoved
             : context.l10n.trackOptionAddToLoved,

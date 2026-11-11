@@ -17,13 +17,15 @@ import 'support/fixed_settings.dart';
 class _Library extends Fake implements LibraryDatabase {
   /// Scanned files by track name.
   final Map<String, String> paths = {};
+  final Map<String, String> isrcPaths = {};
 
   @override
   Future<List<Map<String, dynamic>?>> findExistingBatch(
     List<LocalLibraryBatchLookupRequest> requests,
   ) async => [
     for (final request in requests)
-      if (paths[request.trackName] case final path?)
+      if ((isrcPaths[request.isrc] ?? paths[request.trackName])
+          case final path?)
         {'filePath': path}
       else
         null,
@@ -199,6 +201,45 @@ void main() {
     addTearDown(container.dispose);
     return container;
   }
+
+  test(
+    'strict recording lookup rejects a same-name local recording and reuses exact identifiers',
+    () async {
+      const selected = Track(
+        id: 'deezer:2',
+        source: 'deezer',
+        name: 'Song',
+        artistName: 'Band',
+        albumName: 'Re-recording',
+        duration: 180,
+        isrc: 'NEW123',
+      );
+      final library = _Library()..paths['Song'] = 'content://library/old';
+      final history = _HistoryDatabase();
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => jsonEncode({
+          'content://library/old': 'found',
+          'content://library/exact': 'found',
+          'content://downloads/exact': 'found',
+        }),
+      );
+      Future<List<String?>> resolve({bool strict = true}) async =>
+          (await resolveTrackFiles(
+            [selected],
+            library: library,
+            history: history,
+            includeLocal: true,
+            strictRecording: strict,
+          )).paths;
+      expect(await resolve(strict: false), ['content://library/old']);
+      expect(await resolve(), [null]);
+      history.paths[selected.id] = 'content://downloads/exact';
+      expect(await resolve(), ['content://downloads/exact']);
+      library.isrcPaths[selected.isrc!] = 'content://library/exact';
+      expect(await resolve(), ['content://library/exact']);
+    },
+  );
 
   test('scanned files play only while Local Library is on', () async {
     final library = _Library()..paths['Track 0'] = 'content://library/0';

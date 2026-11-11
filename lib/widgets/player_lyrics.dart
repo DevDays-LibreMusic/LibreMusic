@@ -817,8 +817,8 @@ class _SyncedLyricsViewState extends ConsumerState<SyncedLyricsView>
             viewport.getOffsetToReveal(object!, 0.5).offset - _scroll.offset,
           );
         }
-        await Scrollable.ensureVisible(
-          lineContext,
+        await _scroll.position.ensureVisible(
+          lineContext.findRenderObject()!,
           alignment: 0.5,
           alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
           duration: duration,
@@ -856,8 +856,8 @@ class _SyncedLyricsViewState extends ConsumerState<SyncedLyricsView>
     }
     final lineContext = _lineKeys[index].currentContext;
     if (lineContext != null && lineContext.mounted) {
-      await Scrollable.ensureVisible(
-        lineContext,
+      await _scroll.position.ensureVisible(
+        lineContext.findRenderObject()!,
         alignment: 0.5,
         alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
         duration: duration == Duration.zero

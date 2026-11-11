@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:mornye/providers/wave_session_provider.dart';
+import 'package:mornye/providers/lastfm_account_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -70,6 +72,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          waveSessionProvider.overrideWith(_IdleWave.new),
+          lastfmAccountStateProvider.overrideWith(
+            (ref) =>
+                Stream.value(const LastfmAccountState(appConfigured: true)),
+          ),
           settingsProvider.overrideWith(
             () => _Settings(externalPlayer: externalPlayer),
           ),
@@ -380,4 +387,9 @@ class _History extends DownloadHistoryNotifier {
 class _Recent extends RecentAccessNotifier {
   @override
   RecentAccessState build() => const RecentAccessState(isLoaded: true);
+}
+
+class _IdleWave extends WaveSessionController {
+  @override
+  WaveSessionState build() => const WaveSessionState(loaded: true);
 }

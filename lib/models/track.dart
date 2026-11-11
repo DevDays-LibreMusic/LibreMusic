@@ -127,6 +127,14 @@ class Track {
       ),
       headerVideoUrl: normalizeRemoteHttpUrl(data['header_video']?.toString()),
       isrc: data['isrc']?.toString(),
+      deezerId:
+          normalizeOptionalString(data['deezer_id']?.toString()) ??
+          (effectiveSource?.toLowerCase() == 'deezer'
+              ? preferredId.replaceFirst(
+                  RegExp(r'^deezer:', caseSensitive: false),
+                  '',
+                )
+              : null),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,

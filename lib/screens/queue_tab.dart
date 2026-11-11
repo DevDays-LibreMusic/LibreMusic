@@ -1,3 +1,4 @@
+import 'package:mornye/widgets/wave_controls.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:mornye/widgets/open_audio_button.dart';
@@ -897,6 +898,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         ? context.l10n.searchPlaylists
                         : context.l10n.searchSongs,
                   ),
+
+                if (widget.librarySection == null &&
+                    _searchController.text.isEmpty)
+                  const SliverToBoxAdapter(child: WaveHistorySection()),
 
                 if (shouldShowLibraryControls || hasQueueItems)
                   SliverToBoxAdapter(
