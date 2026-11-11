@@ -266,6 +266,7 @@ class MusicPlayerHandler extends BaseAudioHandler
       _updateHaptics();
     }
     if (previous.autoplay != settings.autoplay ||
+        previous.recommendationProfileId != settings.recommendationProfileId ||
         previous.autoplayPersonalization != settings.autoplayPersonalization ||
         previous.localLibraryEnabled != settings.localLibraryEnabled) {
       _autoplay.updateMode();
@@ -493,6 +494,7 @@ class MusicPlayerHandler extends BaseAudioHandler
         _settings.autoplayPersonalization && _settings.playerMode == 'internal';
     _runtime.personalization.setEnabled(enabled);
     if (enabled && _index >= 0 && _index < _media.length) {
+      _runtime.recommendations.begin(_media[_index]);
       _runtime.personalization.begin(_learningTrack(_media[_index]));
       final state = playbackState.value;
       _runtime.personalization.updatePlayback(
@@ -1188,6 +1190,16 @@ class MusicPlayerHandler extends BaseAudioHandler
     if (_dependencies.sourceDeletionEvents.isDeleting(media.source)) {
       return null;
     }
+    if (media.source.startsWith('musicserver://')) {
+      // Stable identity is persisted; expiring tickets are resolved per play.
+      // This path never enters the offline-copy or whole-file prefetch cache.
+      try {
+        return await _dependencies.resolveMusicServerSource(media.source);
+      } catch (_) {
+        _log.w('Music server source is unavailable');
+        return null;
+      }
+    }
     if (media.source.startsWith('network://')) {
       try {
         final copy = await _dependencies.offlineCopy(media.source);
@@ -1762,6 +1774,7 @@ class MusicPlayerHandler extends BaseAudioHandler
       startPosition,
       duration: media.duration,
     );
+    _runtime.recommendations.begin(media);
     _runtime.personalization.begin(_learningTrack(media));
     _playbackInstance++;
     mediaItem.add(_toMediaItem(media));

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:mornye/screens/recommendations_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -169,6 +170,21 @@ class _PlaybackSettingsPageState extends ConsumerState<PlaybackSettingsPage>
       body: CustomScrollView(
         slivers: [
           AppSliverHeader.page(title: context.l10n.libraryPlayback),
+          ...settingsSectionSlivers(
+            title: context.l10n.recTitle,
+            children: [
+              SettingsItem(
+                icon: Icons.tune,
+                title: context.l10n.recTitle,
+                subtitle: context.l10n.recDescription,
+                onTap: () => pushPage<void>(
+                  context,
+                  (_) => const RecommendationsScreen(),
+                ),
+                showDivider: false,
+              ),
+            ],
+          ),
           ...settingsSectionSlivers(
             title: context.l10n.sectionPlayer,
             children: [

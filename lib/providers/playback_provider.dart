@@ -32,11 +32,16 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   Future<bool> _useInternalPlayer({String? source}) async {
     final mode = ref.read(settingsProvider).playerMode;
-    if (mode != 'internal' && source?.startsWith('network://') != true) {
+    if (mode != 'internal' && !isRemoteLibraryPath(source)) {
       return false;
     }
-    return await ref.read(musicPlayerControllerProvider).ensureInitialized() !=
+    final initialized =
+        await ref.read(musicPlayerControllerProvider).ensureInitialized() !=
         null;
+    if (!initialized && isRemoteLibraryPath(source)) {
+      throw StateError('The internal player is required for streaming');
+    }
+    return initialized;
   }
 
   Future<void> playLocalPath({
@@ -175,7 +180,7 @@ class PlaybackController extends Notifier<PlaybackState> {
           skippedCueVirtualTrack = true;
           continue;
         }
-        if (path.startsWith('network://')) {
+        if (isRemoteLibraryPath(path)) {
           // Network identities require the internal proxy-aware player.
           networkSource = path;
           resolvedPaths = await resolveTrackFilePaths(tracks);

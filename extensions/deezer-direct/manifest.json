@@ -1,0 +1,66 @@
+{
+  "name": "deezer-direct",
+  "displayName": "Deezer Direct",
+  "version": "0.1.0",
+  "description": "Прямой доступ к Deezer через ARL своего аккаунта: поиск, ссылки, коллекции, MP3 и FLAC. Экспериментальная версия.",
+  "type": [
+    "metadata_provider",
+    "download_provider"
+  ],
+  "minAppVersion": "4.9.1",
+  "requiredRuntimeFeatures": [
+    "patternedFileTransform@1"
+  ],
+  "permissions": {
+    "network": [
+      "api.deezer.com",
+      "www.deezer.com",
+      "media.deezer.com",
+      "*.dzcdn.net"
+    ],
+    "storage": false,
+    "file": true
+  },
+  "settings": [
+    {
+      "key": "arl",
+      "type": "string",
+      "label": "ARL аккаунта Deezer",
+      "description": "Только значение cookie arl из своего аккаунта Deezer. Не пароль и не полный заголовок Cookie.",
+      "secret": true,
+      "required": true
+    }
+  ],
+  "qualityOptions": [
+    {
+      "id": "mp3-128",
+      "kind": "lossy",
+      "label": "MP3 128 kbps"
+    },
+    {
+      "id": "mp3-320",
+      "kind": "lossy",
+      "label": "MP3 320 kbps"
+    },
+    {
+      "id": "flac",
+      "kind": "lossless",
+      "label": "FLAC",
+      "description": "Только доступный аккаунту FLAC. Параметры определяются по файлу."
+    }
+  ],
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Поиск в Deezer"
+  },
+  "urlHandler": {
+    "enabled": true,
+    "patterns": [
+      "www.deezer.com",
+      "deezer.com"
+    ]
+  },
+  "capabilities": {
+    "downloadFallbackTier": "lossless"
+  }
+}

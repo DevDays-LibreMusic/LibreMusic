@@ -22,6 +22,7 @@ import 'package:mornye/screens/settings/library_settings_page.dart';
 import 'package:mornye/screens/settings/link_desktop_settings_page.dart';
 import 'package:mornye/screens/settings/link_settings_page.dart';
 import 'package:mornye/screens/network_storage_screen.dart';
+import 'package:mornye/screens/music_server_screen.dart';
 import 'package:mornye/screens/settings/log_screen.dart';
 import 'package:mornye/screens/settings/lyrics_settings_page.dart';
 import 'package:mornye/screens/settings/metadata_settings_page.dart';
@@ -269,6 +270,22 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
               'http',
             ],
             pageBuilder: () => const NetworkStorageScreen(),
+          ),
+          _Destination(
+            icon: Icons.cloud_outlined,
+            iconColor: Colors.blueGrey,
+            title: l10n.musicServerTitle,
+            subtitle: l10n.musicServerDescription,
+            keywords: const ['server', 'stream', 'music', 'сервер', 'стриминг'],
+            searchEntries: [
+              SettingsSearchEntry(
+                icon: Icons.cloud_outlined,
+                title: l10n.musicServerConnect,
+                targetLabel: l10n.musicServerConnect,
+                keywords: const ['login', 'account', 'server address'],
+              ),
+            ],
+            pageBuilder: () => const MusicServerScreen(),
           ),
           if (Platform.isAndroid || Platform.isIOS)
             _Destination(

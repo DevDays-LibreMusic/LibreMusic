@@ -185,7 +185,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen>
 
   FileAccessCheck? _fileAccess;
   bool get _fileExists => _fileAccess is FileAccessFound;
-  bool get _isNetworkItem => cleanFilePath.startsWith('network://');
+  bool get _isNetworkItem => isRemoteLibraryPath(cleanFilePath);
   bool _networkFileDeletable = false;
   bool get _canDeleteFile => !_isNetworkItem || _networkFileDeletable;
   bool get _canEditMetadataFile =>
@@ -317,6 +317,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen>
       _networkFileDeletable = networkFileDeletable;
     });
     if (!_fileExists) return;
+    // The server library stores metadata, not an editable audio file here.
+    if (filePath.startsWith('musicserver://')) return;
 
     if (_lyrics == null && !_lyricsLoading) {
       unawaited(_checkEmbeddedLyrics());

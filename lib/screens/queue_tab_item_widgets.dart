@@ -1023,6 +1023,16 @@ extension _QueueTabItemWidgets on _QueueTabState {
               _ => null,
             },
             leading: _buildUnifiedCoverImage(item, colorScheme, 32),
+            titleTrailing: item.filePath.startsWith('musicserver://')
+                ? Tooltip(
+                    message: context.l10n.musicServerTitle,
+                    child: Icon(
+                      Icons.cloud_outlined,
+                      size: 16,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : null,
             playback: mediaItemPlaybackUiProvider(_libraryPlaybackKey(item)),
           );
       rows.add(row);
@@ -1058,7 +1068,9 @@ extension _QueueTabItemWidgets on _QueueTabState {
 
     final isDownloaded = item.source == LibraryItemSource.downloaded;
     final quality = item.qualityForMode(_libraryQualityLabelMode);
-    final sourceLabel = isDownloaded
+    final sourceLabel = item.filePath.startsWith('musicserver://')
+        ? context.l10n.musicServerTitle
+        : isDownloaded
         ? context.l10n.librarySourceDownloaded
         : context.l10n.librarySourceLocal;
     // The label text tells the sources apart; rows keep one neutral role.

@@ -1108,6 +1108,7 @@ extension _ArtistScreenSections on _ArtistScreenState {
                       ],
                     ),
                   ),
+                  TrackListenButton(track: track),
                   TrackCollectionQuickActions(
                     track: track,
                     hasLocalPlaybackCandidate: isInHistory || isInLocalLibrary,
@@ -1162,38 +1163,13 @@ extension _ArtistScreenSections on _ArtistScreenState {
   void _downloadTrack(Track track) {
     final settings = ref.read(settingsProvider);
     ref.read(settingsProvider.notifier).setHasSearchedBefore();
-
-    void enqueue(String service, {String? quality}) {
-      ref
-          .read(downloadQueueProvider.notifier)
-          .addToQueue(track, service, qualityOverride: quality);
-      showAddedToQueueSnackBar(context, track.name);
-    }
-
-    if (settings.askQualityBeforeDownload || settings.allowQualityVariants) {
-      DownloadServicePicker.show(
-        context,
-        recommendedService: _recommendedDownloadService(),
-        onSelect: (quality, service) {
-          if (!mounted) return;
-          enqueue(service, quality: quality);
-        },
-      );
-      return;
-    }
-
-    final extensionState = ref.read(extensionProvider);
-    final service = resolveEffectiveDownloadService(
-      settings.defaultService,
-      extensionState,
+    downloadSingleTrack(
+      context,
+      ref,
+      track,
+      recommendedService: _recommendedDownloadService(),
+      forceQualityPicker: settings.allowQualityVariants,
     );
-    if (service.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.extensionsNoDownloadProvider)),
-      );
-      return;
-    }
-    enqueue(service);
   }
 
   Widget _buildAlbumSection(

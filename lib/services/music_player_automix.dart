@@ -425,6 +425,7 @@ class _MusicAutoMix {
       handler._pendingRestorePosition = null;
       handler._failures.started(next, _nextPath);
       rate = plan.rate;
+      handler._runtime.recommendations.begin(next);
       handler._runtime.personalization.begin(_learningTrack(next));
       handler._playbackInstance++;
       handler.mediaItem.add(

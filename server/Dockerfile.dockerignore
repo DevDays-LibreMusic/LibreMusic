@@ -1,0 +1,14 @@
+**
+!LICENSE
+!COPYING
+!NOTICE
+!server/**
+!rust_backend/**
+rust_backend/target
+server/build
+server/data
+server/private
+server/imports
+**/__pycache__
+**/.git
+**/.env

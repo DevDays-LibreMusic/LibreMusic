@@ -401,6 +401,22 @@ extension _HomeTabExploreUI on _HomeTabState {
           groups: [
             [
               MornyeMenuAction(
+                icon: CupertinoIcons.headphones,
+                label: menuContext.l10n.musicServerListen,
+                onPressed: () {
+                  Navigator.pop(menuContext);
+                  listenToTrack(context, _trackForExploreItem(item));
+                },
+              ),
+              MornyeMenuAction(
+                icon: CupertinoIcons.add_circled,
+                label: menuContext.l10n.musicServerAddToLibrary,
+                onPressed: () {
+                  Navigator.pop(menuContext);
+                  addTrackToServerLibrary(context, _trackForExploreItem(item));
+                },
+              ),
+              MornyeMenuAction(
                 icon: mornyeIconFor(Icons.download),
                 label: menuContext.l10n.downloadTitle,
                 onPressed: () {
@@ -490,6 +506,28 @@ extension _HomeTabExploreUI on _HomeTabState {
             // Material sheets separate the header by space alone.
             if (context.isMornye) const Divider(height: 1),
             ListTile(
+              leading: Icon(
+                Icons.headphones_outlined,
+                color: colorScheme.primary,
+              ),
+              title: Text(context.l10n.musicServerListen),
+              onTap: () {
+                Navigator.pop(context);
+                listenToTrack(this.context, _trackForExploreItem(item));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.library_add_outlined),
+              title: Text(context.l10n.musicServerAddToLibrary),
+              onTap: () {
+                Navigator.pop(context);
+                addTrackToServerLibrary(
+                  this.context,
+                  _trackForExploreItem(item),
+                );
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.download, color: colorScheme.primary),
               title: Text(context.l10n.downloadTitle),
               onTap: () {
@@ -512,54 +550,31 @@ extension _HomeTabExploreUI on _HomeTabState {
     );
   }
 
+  Track _trackForExploreItem(ExploreItem item) => Track(
+    id: item.id,
+    name: item.name,
+    artistName: item.artists,
+    albumName: item.albumName ?? '',
+    albumId: item.albumId,
+    duration: item.durationMs ~/ 1000,
+    trackNumber: null,
+    discNumber: null,
+    totalDiscs: null,
+    isrc: null,
+    releaseDate: item.releaseDate,
+    coverUrl: item.coverUrl,
+    source: _providerIdForExploreItem(item),
+    explicit: item.explicit,
+  );
+
   Future<void> _handleExploreTrackPrimaryAction(ExploreItem item) async {
     final settings = ref.read(settingsProvider);
-
-    final track = Track(
-      id: item.id,
-      name: item.name,
-      artistName: item.artists,
-      albumName: item.albumName ?? '',
-      albumId: item.albumId,
-      duration: item.durationMs ~/ 1000,
-      trackNumber: null,
-      discNumber: null,
-      totalDiscs: null,
-      isrc: null,
-      releaseDate: item.releaseDate,
-      coverUrl: item.coverUrl,
-      source: _providerIdForExploreItem(item),
-      explicit: item.explicit,
+    downloadSingleTrack(
+      context,
+      ref,
+      _trackForExploreItem(item),
+      forceQualityPicker: settings.allowQualityVariants,
     );
-
-    if (settings.askQualityBeforeDownload || settings.allowQualityVariants) {
-      DownloadServicePicker.show(
-        context,
-        trackName: track.name,
-        artistName: track.artistName,
-        coverUrl: track.coverUrl,
-        onSelect: (quality, service) {
-          ref
-              .read(downloadQueueProvider.notifier)
-              .addToQueue(track, service, qualityOverride: quality);
-          showAddedToQueueSnackBar(context, track.name);
-        },
-      );
-    } else {
-      final extensionState = ref.read(extensionProvider);
-      final service = resolveEffectiveDownloadService(
-        settings.defaultService,
-        extensionState,
-      );
-      if (service.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.extensionsNoDownloadProvider)),
-        );
-        return;
-      }
-      ref.read(downloadQueueProvider.notifier).addToQueue(track, service);
-      showAddedToQueueSnackBar(context, track.name);
-    }
   }
 
   /// Each home-feed section becomes a browse tile without requiring the

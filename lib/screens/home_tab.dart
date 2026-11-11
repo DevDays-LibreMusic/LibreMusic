@@ -1,3 +1,4 @@
+import 'package:mornye/screens/recommendation_flow_screen.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -85,6 +86,7 @@ import 'package:mornye/screens/playlist_screen.dart';
 import 'package:mornye/screens/downloaded_album_screen.dart';
 import 'package:mornye/widgets/download_service_picker.dart';
 import 'package:mornye/widgets/track_collection_quick_actions.dart';
+import 'package:mornye/widgets/track_listen_button.dart';
 import 'package:mornye/widgets/desktop/context_menu.dart';
 import 'package:mornye/widgets/animation_utils.dart';
 import 'package:mornye/widgets/audio_quality_badges.dart';
@@ -971,6 +973,20 @@ class _HomeTabState extends ConsumerState<HomeTab>
               else
                 _buildHeaderSliver(greeting: greeting),
               if (_showsHome) const SliverToBoxAdapter(child: AppCrashBanner()),
+              if (_showsHome && !hasActiveSearchSurface)
+                SliverToBoxAdapter(
+                  child: ListTile(
+                    leading: const Icon(Icons.auto_awesome),
+                    title: Text(context.l10n.recFlowTitle),
+                    subtitle: Text(context.l10n.recFlowSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RecommendationFlowScreen(),
+                      ),
+                    ),
+                  ),
+                ),
               _buildHomeIntroSliver(
                 sectionMotion: sectionMotion,
                 hasResults: hasResults,

@@ -1,5 +1,10 @@
 # Mornye Rust Backend
 
+The optional `music-extension-worker` binary in `crates/extensions` runs a
+server-owned download using the same extension runtime. Its request file,
+per-user storage and FFmpeg lifecycle are documented in
+[`server/README.md`](../server/README.md). It does not change the mobile ABI.
+
 The Rust workspace is the app's only backend on Android and iOS. Flutter
 reaches it through the native channel (see `android/README.md`); Kotlin and
 Swift call it through UniFFI bindings generated from `mornye-mobile`.

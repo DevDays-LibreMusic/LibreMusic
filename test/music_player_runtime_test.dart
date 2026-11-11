@@ -682,6 +682,7 @@ MusicPlayerRuntime _runtime({
   Future<String?> Function(String)? recoverMissingFile,
   Future<String?> Function(String, String, AppSettings)? recoverMovedDownload,
   Future<String> Function(String)? resolveNetworkSource,
+  Future<String> Function(String)? resolveMusicServerSource,
   Future<String?> Function(String)? offlineCopy,
   NetworkPlaybackCache? networkCache,
   Future<Map<String, dynamic>> Function(String)? readNetworkMetadata,
@@ -723,6 +724,9 @@ MusicPlayerRuntime _runtime({
       recoverMovedDownload: recoverMovedDownload ?? (_, _, _) async => null,
       resolveNetworkSource:
           resolveNetworkSource ?? NetworkStorageService.instance.resolve,
+      resolveMusicServerSource:
+          resolveMusicServerSource ??
+          (_) async => throw StateError('Unexpected server resolution'),
       offlineCopy: offlineCopy ?? (_) async => null,
       networkCache: () => networkCache,
       readNetworkMetadata:
@@ -763,6 +767,56 @@ const _track = PlayableMedia(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test(
+    'server playback resolves a ticket without local copies or metadata reads',
+    () async {
+      final decks = <_Deck>[];
+      var tickets = 0;
+      var offlineCopies = 0, metadataReads = 0, localRecoveries = 0;
+      final runtime = _runtime(
+        decks: decks,
+        resolveMusicServerSource: (source) async {
+          expect(source, 'musicserver://account/asset');
+          tickets++;
+          return 'https://music.example.org/v1/media/ticket';
+        },
+        offlineCopy: (_) async {
+          offlineCopies++;
+          return null;
+        },
+        readMetadata: (_, {displayName}) async {
+          metadataReads++;
+          return {};
+        },
+        recoverMissingFile: (_) async {
+          localRecoveries++;
+          return null;
+        },
+      );
+      final player = await runtime.initialize();
+      await player.setQueueAndPlay(const [
+        PlayableMedia(
+          id: 'server',
+          source: 'musicserver://account/asset',
+          title: 'Track',
+          artist: 'Artist',
+        ),
+      ]);
+      expect(tickets, 1);
+      expect(offlineCopies, 0);
+      expect(metadataReads, 0);
+      expect(localRecoveries, 0);
+      expect(
+        decks.first.sources,
+        contains('stream https://music.example.org/v1/media/ticket'),
+      );
+      expect(
+        player.mediaItem.value?.extras?['source'],
+        'musicserver://account/asset',
+      );
+    },
+  );
 
   test('exclusive gapless advances metadata on one continuous deck', () async {
     final deck = _QueuedDeck();

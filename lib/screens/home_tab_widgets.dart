@@ -333,6 +333,7 @@ class _TrackItemWithStatus extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  TrackListenButton(track: track),
                   PreviewButton(track: track),
                   TrackCollectionQuickActions(
                     track: track,

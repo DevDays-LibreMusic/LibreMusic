@@ -1,0 +1,3 @@
+Independent JavaScript implementation, LGPL-3.0-only.
+Protocol reference (no source code copied):
+https://github.com/unspok3n/beatportdl/tree/878d3f61c5a98cffd43b9e0306b8cbc75488999e/internal/beatport

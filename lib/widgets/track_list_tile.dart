@@ -13,6 +13,7 @@ import 'package:mornye/widgets/track_card.dart';
 import 'package:mornye/widgets/in_library_badge.dart';
 import 'package:mornye/widgets/preview_button.dart';
 import 'package:mornye/widgets/track_collection_quick_actions.dart';
+import 'package:mornye/widgets/track_listen_button.dart';
 
 /// Track row shared by the album and playlist screens. Tap offers another
 /// download when quality variants are enabled, otherwise it plays the local
@@ -116,6 +117,7 @@ class TrackListTile extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          TrackListenButton(track: track),
           PreviewButton(track: track),
           TrackCollectionQuickActions(
             track: track,

@@ -106,6 +106,32 @@ void main() {
   ];
 
   test(
+    'saved server identity cannot fall back to a matching local file',
+    () async {
+      const source = 'musicserver://account/server-asset';
+      final library = _Library()
+        ..paths['Track 0'] = 'network://nas/local-copy.mp3';
+      final result = await resolveTrackFiles(
+        [
+          Track(
+            id: source,
+            name: 'Track 0',
+            artistName: 'Artist',
+            albumName: '',
+            duration: 180,
+            source: 'local',
+          ),
+        ],
+        library: library,
+        history: _HistoryDatabase(),
+        includeLocal: true,
+      );
+      expect(result.paths, [source]);
+      expect(result.missingHistoryIds, isEmpty);
+    },
+  );
+
+  test(
     'a moved download is resolved before it can be removed as an orphan',
     () async {
       final database = _HistoryDatabase()..paths['0'] = 'content://old/song';

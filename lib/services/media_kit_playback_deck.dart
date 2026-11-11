@@ -67,6 +67,8 @@ class MediaKitEngine implements MpvEngine, MpvPlaylistEngine {
       // media_kit caches streams on disk, which fails where the cache folder
       // is not writable and reports a load error. Memory is enough for audio.
       setProperty('cache-on-disk', 'no'),
+      setProperty('demuxer-max-bytes', '${8 * 1024 * 1024}'),
+      setProperty('demuxer-max-back-bytes', '${2 * 1024 * 1024}'),
       // Mornye reads sidecar lyrics itself. A failed mpv subtitle autoload
       // must not turn an otherwise playable song into a source error.
       setProperty('sub-auto', 'no'),

@@ -10,6 +10,7 @@ import 'package:mornye/providers/download_history_provider.dart';
 import 'package:mornye/screens/track_metadata_screen.dart';
 import 'package:mornye/services/source_deletion_events.dart';
 import 'package:mornye/services/source_metadata_events.dart';
+import 'package:mornye/services/library_database.dart';
 import 'package:mornye/theme/mornye_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,6 +37,55 @@ void main() {
   tearDownAll(() async => cache.delete(recursive: true));
 
   for (final mornye in [false, true]) {
+    testWidgets(
+      'server library details do not read local audio (Mornye=$mornye)',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(paths, (_) async => cache.path);
+        addTearDown(() => messenger.setMockMethodCallHandler(paths, null));
+        final fileReads = <String>[];
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          if (const {
+            'readFileMetadata',
+            'readAudioMetadata',
+            'extractCoverToFile',
+            'safStat',
+          }.contains(call.method)) {
+            fileReads.add(call.method);
+          }
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+        final item = LocalLibraryItem(
+          id: 'musicserver://account/asset',
+          filePath: 'musicserver://account/asset',
+          trackName: 'Server track',
+          artistName: 'Artist',
+          albumName: 'Album',
+          scannedAt: DateTime(2026),
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              theme: mornye
+                  ? MornyeTheme.build(Brightness.dark)
+                  : ThemeData.dark(useMaterial3: true),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: TrackMetadataScreen(localItem: item),
+            ),
+          ),
+        );
+        await _settleFileIo(tester);
+        expect(find.text('Server track'), findsWidgets);
+        expect(find.text('File not found'), findsNothing);
+        expect(fileReads, isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
     testWidgets(
       'open details refresh after an edit and deletion (Mornye=$mornye)',
       (tester) async {

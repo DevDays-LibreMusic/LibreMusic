@@ -14,6 +14,10 @@ Future<void> resetAutoplayLearning({MusicPlayerRuntime? runtime}) async {
   handler._autoplay.updateMode();
 }
 
+void refreshRecommendationProfile({MusicPlayerRuntime? runtime}) {
+  (runtime ?? musicPlayerRuntime).handler?._autoplay.updateMode();
+}
+
 AutoplayLearningTrack _learningTrack(PlayableMedia media) =>
     AutoplayLearningTrack(
       source: media.source,
@@ -505,6 +509,70 @@ class _MusicAutoplay {
 
   Future<void> _fill(PlayableMedia seed, int generation) async {
     try {
+      final runtimeForProfile = handler._runtime;
+      final profileId = runtimeForProfile.settings.recommendationProfileId;
+      if (profileId.isNotEmpty) {
+        final profile =
+            (await runtimeForProfile.recommendations.store.profiles())
+                .where((p) => p.id == profileId)
+                .firstOrNull;
+        // A deleted/missing profile must not fall back to unfiltered music.
+        if (profile == null) return;
+        final revision = handler._sessionQueueRevision;
+        final upcoming = handler._media.skip(handler._index + 1).toList();
+        final result = await runtimeForProfile.recommendations.generate(
+          profile,
+          includeLocal: handler._settings.localLibraryEnabled,
+          limit: max(0, 6 - upcoming.length),
+          session: [seed, ...upcoming],
+          excludedSources: {
+            seed.source,
+            ...upcoming.map((m) => m.source),
+            ..._dismissed,
+          },
+          loadSignals: (candidates) async => [
+            ?await runtimeForProfile.songAnalysis.loadSignal(
+              session: [seed, ...upcoming],
+              candidates: candidates,
+            ),
+          ],
+          cancelled: () =>
+              handler._disposed ||
+              !enabled ||
+              generation != _generation ||
+              revision != handler._sessionQueueRevision ||
+              runtimeForProfile.settings.recommendationProfileId != profileId,
+        );
+        if (handler._disposed ||
+            !enabled ||
+            generation != _generation ||
+            revision != handler._sessionQueueRevision ||
+            result.picks.isEmpty) {
+          return;
+        }
+        runtimeForProfile.recommendations.remember(profile, result.picks);
+        final additions = [
+          for (final pick in result.picks)
+            PlayableMedia.fromJson({
+              ...runtimeForProfile.recommendations
+                  .mediaFor(profile, pick)
+                  .toJson(),
+              'autoplay': true,
+            })!,
+        ];
+        final queueItems = additions.map(handler._toMediaItem).toList();
+        handler._media.addAll(additions);
+        handler._queueItems.addAll(queueItems);
+        handler._originalQueueOrder?.addAll(queueItems);
+        handler._markSessionQueueChanged();
+        handler.queue.add(List.unmodifiable(handler._queueItems));
+        unawaited(
+          handler._persistSession(
+            position: handler.playbackState.value.position,
+          ),
+        );
+        return;
+      }
       final candidates = await loadLibrary(seed);
       final signals = await _loadSignals(candidates);
       if (!enabled ||

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mornye/widgets/app_alert_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
@@ -15,9 +16,7 @@ import 'package:mornye/widgets/download_service_picker.dart';
 import 'package:mornye/widgets/app_snack_bar.dart';
 import 'package:mornye/widgets/view_queue_snackbar_action.dart';
 
-/// Shared single-track "add to queue" flow for detail screens: shows the
-/// quality/service picker when the user opted into it, otherwise resolves
-/// the default service and enqueues directly.
+/// Downloads a track locally using the existing quality/service and queue flow.
 void downloadSingleTrack(
   BuildContext context,
   WidgetRef ref,
@@ -27,7 +26,8 @@ void downloadSingleTrack(
   int? playlistPosition,
   bool forceQualityPicker = false,
 }) {
-  final settings = ref.read(settingsProvider);
+  final container = ProviderScope.containerOf(context, listen: false);
+  final settings = container.read(settingsProvider);
 
   void notifyQueued() {
     showAddedToQueueSnackBar(context, track.name);
@@ -35,7 +35,6 @@ void downloadSingleTrack(
 
   if (settings.askQualityBeforeDownload || forceQualityPicker) {
     // A context menu may be disposed before the quality picker is submitted.
-    final container = ProviderScope.containerOf(context, listen: false);
     DownloadServicePicker.show(
       context,
       trackName: track.name,
@@ -57,7 +56,7 @@ void downloadSingleTrack(
       },
     );
   } else {
-    final extensionState = ref.read(extensionProvider);
+    final extensionState = container.read(extensionProvider);
     final service = resolveEffectiveDownloadService(
       settings.defaultService,
       extensionState,
@@ -69,7 +68,7 @@ void downloadSingleTrack(
       );
       return;
     }
-    ref
+    container
         .read(downloadQueueProvider.notifier)
         .addToQueue(
           track,
@@ -79,6 +78,17 @@ void downloadSingleTrack(
         );
     notifyQueued();
   }
+}
+
+/// Opens server playback, keeping the requested track through sign-in if needed.
+/// The server screen handles preparation and playback without local downloads.
+void listenToTrack(BuildContext context, Track track) {
+  context.push('/music-server?prepare=1', extra: track);
+}
+
+/// Prepares the audio on the server and saves its streaming reference locally.
+void addTrackToServerLibrary(BuildContext context, Track track) {
+  context.push('/music-server?prepare=1&library=1', extra: track);
 }
 
 /// Shared "download all" confirmation dialog for detail screens

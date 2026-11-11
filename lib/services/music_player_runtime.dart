@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:mornye/services/recommendations/recommendation_service.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
@@ -36,6 +37,7 @@ import 'package:mornye/services/music_player_service.dart';
 import 'package:mornye/services/network_metadata_service.dart';
 import 'package:mornye/services/network_playback_cache.dart';
 import 'package:mornye/services/network_storage_service.dart';
+import 'package:mornye/services/music_server_client.dart';
 import 'package:mornye/services/platform_bridge.dart';
 import 'package:mornye/services/playback_deck.dart';
 import 'package:mornye/services/playback_notification.dart';
@@ -72,6 +74,7 @@ class PlaybackDependencies {
     this.readMetadata = PlatformBridge.readFileMetadata,
     this.readNetworkMetadata = _readNetworkMetadata,
     this.resolveNetworkSource = _resolveNetworkSource,
+    this.resolveMusicServerSource = _resolveMusicServerSource,
     this.offlineCopy = _offlineCopy,
     this.networkCache = _networkCache,
     this.networkSourceReachable = _networkSourceReachable,
@@ -125,6 +128,7 @@ class PlaybackDependencies {
   readMetadata;
   final Future<Map<String, dynamic>> Function(String) readNetworkMetadata;
   final Future<String> Function(String) resolveNetworkSource;
+  final Future<String> Function(String) resolveMusicServerSource;
   final Future<String?> Function(String) offlineCopy;
 
   /// The local copies of network songs around the one playing; null plays
@@ -236,6 +240,9 @@ class PlaybackDependencies {
       NetworkMetadataService.instance.read(source);
   static Future<String> _resolveNetworkSource(String source) =>
       NetworkStorageService.instance.resolve(source);
+
+  static Future<String> _resolveMusicServerSource(String source) =>
+      MusicServerClient.instance.resolve(source);
   static Future<String?> _offlineCopy(String source) async {
     final row = await HistoryDatabase.instance.findOfflineCopy(source);
     final path = row?['filePath'] as String?;
@@ -315,7 +322,11 @@ class MusicPlayerRuntime {
   AutoplayPersonalization get personalization =>
       _personalization ??= (dependencies.createPersonalization()
         ..feedback.listen(taste.record)
-        ..feedback.listen(ranker.record));
+        ..feedback.listen(ranker.record)
+        ..feedback.listen(recommendations.record));
+  RecommendationService? _recommendations;
+  RecommendationService get recommendations => _recommendations ??=
+      RecommendationService(library: dependencies.libraryDatabase);
   AutoplayTaste? _taste;
   AutoplayTaste get taste => _taste ??= dependencies.createTaste();
   AutoplayRanker? _ranker;

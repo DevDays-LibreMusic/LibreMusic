@@ -87,6 +87,12 @@ resolveTrackFiles(
     while (true) {
       final index = next++;
       if (index >= tracks.length) return;
+      // A saved streaming identity must never be replaced by a local track
+      // with matching metadata, including after it leaves the library.
+      if (tracks[index].id.startsWith('musicserver://')) {
+        results[index] = tracks[index].id;
+        continue;
+      }
       final localPath = localMatches[index]?['filePath']?.toString() ?? '';
       if (localPath.isNotEmpty && await pathExists(localPath)) {
         results[index] = localPath;

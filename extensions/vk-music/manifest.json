@@ -1,0 +1,67 @@
+{
+  "name": "vk-music",
+  "displayName": "VK Музыка",
+  "version": "0.1.0",
+  "description": "Поиск, ссылки, альбомы, плейлисты и загрузка доступного аккаунту аудио. Экспериментальная версия.",
+  "type": [
+    "metadata_provider",
+    "download_provider"
+  ],
+  "minAppVersion": "5.3.1",
+  "permissions": {
+    "network": [
+      "api.vk.ru",
+      "*.vkuseraudio.net",
+      "*.vkuseraudio.com",
+      "*.useraudio.com",
+      "*.userapi.com",
+      "*.vk-cdn.net",
+      "*.vkcdn.ru"
+    ],
+    "storage": false,
+    "file": true
+  },
+  "settings": [
+    {
+      "key": "token",
+      "type": "string",
+      "label": "Музыкальный access_token VK",
+      "secret": true,
+      "required": true
+    },
+    {
+      "key": "deviceId",
+      "type": "string",
+      "label": "device_id сессии VK",
+      "secret": true,
+      "required": true
+    },
+    {
+      "key": "userAgent",
+      "type": "string",
+      "label": "User-Agent сессии VK",
+      "description": "При необходимости укажите User-Agent клиента, которым получена сессия."
+    }
+  ],
+  "qualityOptions": [
+    {
+      "id": "original",
+      "kind": "lossy",
+      "label": "Исходное аудио VK (MP3 / AAC HLS)"
+    }
+  ],
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Поиск: VK Музыка"
+  },
+  "urlHandler": {
+    "enabled": true,
+    "patterns": [
+      "vk.com",
+      "vk.ru"
+    ]
+  },
+  "capabilities": {
+    "downloadFallbackTier": "low_res"
+  }
+}

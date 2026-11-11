@@ -295,10 +295,15 @@ String stripCueTrackSuffix(String path) {
   return path.replaceFirst(_cueTrackSuffix, '');
 }
 
+/// Stable remote identities resolved by the internal player, not the filesystem.
+bool isRemoteLibraryPath(String? path) =>
+    path?.startsWith('network://') == true ||
+    path?.startsWith('musicserver://') == true;
+
 Future<bool> fileExists(String? path) async {
   if (path == null || path.isEmpty) return false;
   // Network identities are resolved by the built-in player, not File.exists.
-  if (path.startsWith('network://')) return true;
+  if (isRemoteLibraryPath(path)) return true;
   final realPath = isCueVirtualPath(path) ? stripCueTrackSuffix(path) : path;
   if (isContentUri(realPath)) {
     // A phone's content URI can arrive with synced statistics; a computer has
@@ -328,7 +333,7 @@ Future<Map<String, bool?>> fileExistenceByPath(List<String> paths) async {
   }
   // Offline network paths remain inconclusive during destructive cleanup.
   final local = unique
-      .where((path) => !isContentUri(path) && !path.startsWith('network://'))
+      .where((path) => !isContentUri(path) && !isRemoteLibraryPath(path))
       .toList();
   const concurrency = 16;
   for (var start = 0; start < local.length; start += concurrency) {
@@ -377,6 +382,8 @@ Future<bool> deleteFile(
     path = path.substring(7).trim();
     if (path.isEmpty) return false;
   }
+  // Removing a library reference must not delete the asset on the server.
+  if (path.startsWith('musicserver://')) return false;
   // CUE virtual paths should NOT be deleted through this function —
   // deleting album.cue would remove ALL tracks. Callers should handle
   // CUE deletion specially (e.g. only delete when all tracks are removed).
@@ -411,7 +418,7 @@ Future<bool> deleteFile(
 
 Future<FileAccessStat?> fileStat(String? path) async {
   if (path == null || path.isEmpty) return null;
-  if (path.startsWith('network://')) return const FileAccessStat();
+  if (isRemoteLibraryPath(path)) return const FileAccessStat();
   final realPath = isCueVirtualPath(path) ? stripCueTrackSuffix(path) : path;
   if (isContentUri(realPath)) {
     final stat = await PlatformBridge.safStat(realPath);

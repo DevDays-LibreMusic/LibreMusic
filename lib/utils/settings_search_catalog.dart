@@ -280,6 +280,19 @@ class SettingsSearchCatalog {
           ],
         ),
         SettingsSearchEntry(
+          icon: Icons.tune,
+          title: l10n.recTitle,
+          subtitle: l10n.recDescription,
+          keywords: const [
+            'recommendations',
+            'filters',
+            'profiles',
+            'local',
+            'рекомендации',
+            'фильтры',
+          ],
+        ),
+        SettingsSearchEntry(
           icon: Icons.playlist_play_rounded,
           title: l10n.autoplayFromLibrary,
           subtitle: l10n.autoplayDescription,

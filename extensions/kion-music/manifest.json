@@ -1,0 +1,68 @@
+{
+  "name": "kion-music",
+  "displayName": "КИОН Музыка",
+  "version": "0.1.0",
+  "description": "Поиск, ссылки, альбомы, плейлисты и загрузка доступного аккаунту аудио. Экспериментальная версия.",
+  "type": [
+    "metadata_provider",
+    "download_provider"
+  ],
+  "minAppVersion": "5.3.1",
+  "permissions": {
+    "network": [
+      "api.music.yandex.net",
+      "music.mts.ru",
+      "*.storage.yandex.net",
+      "*.music.yandex.net",
+      "*.mds.yandex.net"
+    ],
+    "storage": false,
+    "file": true
+  },
+  "settings": [
+    {
+      "key": "token",
+      "type": "string",
+      "label": "ya_token аккаунта КИОН Музыки",
+      "secret": true,
+      "required": true
+    },
+    {
+      "key": "endpoint",
+      "type": "select",
+      "label": "API КИОН",
+      "options": [
+        "shared",
+        "mts-proxy"
+      ],
+      "default": "shared",
+      "description": "shared: api.music.yandex.net, как в текущем открытом провайдере; mts-proxy: music.mts.ru/ya_proxy_api. Автопереключения нет."
+    }
+  ],
+  "qualityOptions": [
+    {
+      "id": "mp3-320",
+      "kind": "lossy",
+      "label": "MP3: лучшее доступное до 320 kbps"
+    },
+    {
+      "id": "mp3-128",
+      "kind": "lossy",
+      "label": "MP3 128 kbps"
+    }
+  ],
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Поиск: КИОН Музыка"
+  },
+  "urlHandler": {
+    "enabled": true,
+    "patterns": [
+      "music.kion.ru",
+      "music.mts.ru"
+    ]
+  },
+  "capabilities": {
+    "downloadFallbackTier": "low_res"
+  }
+}

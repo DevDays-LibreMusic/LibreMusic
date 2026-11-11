@@ -1,0 +1,33 @@
+{
+  "name": "yandex-music",
+  "displayName": "Яндекс Музыка",
+  "version": "0.1.1",
+  "description": "Поиск, ссылки, альбомы, плейлисты и полные MP3, доступные вашему аккаунту Яндекс Музыки.",
+  "type": ["metadata_provider", "download_provider"],
+  "minAppVersion": "5.3.1",
+  "permissions": {
+    "network": ["api.music.yandex.net", "*.storage.yandex.net", "*.music.yandex.net", "*.mds.yandex.net"],
+    "storage": false,
+    "file": true
+  },
+  "settings": [
+    {
+      "key": "token",
+      "type": "string",
+      "label": "OAuth-токен Яндекс Музыки",
+      "description": "Токен своего аккаунта. Для полных загрузок нужен доступ аккаунта к треку. Не вставляйте пароль.",
+      "secret": true,
+      "required": true
+    }
+  ],
+  "qualityOptions": [
+    {"id": "mp3-320", "kind": "lossy", "label": "MP3: лучшее доступное", "description": "Полный MP3 с максимальным доступным битрейтом до 320 kbps, включая 192 kbps"},
+    {"id": "mp3-128", "kind": "lossy", "label": "MP3 128 kbps", "description": "Только полный MP3 128 kbps"}
+  ],
+  "searchBehavior": {"enabled": true, "placeholder": "Поиск в Яндекс Музыке"},
+  "urlHandler": {
+    "enabled": true,
+    "patterns": ["music.yandex.ru", "music.yandex.com", "music.yandex.by", "music.yandex.kz", "music.yandex.uz"]
+  },
+  "capabilities": {"downloadFallbackTier": "low_res"}
+}

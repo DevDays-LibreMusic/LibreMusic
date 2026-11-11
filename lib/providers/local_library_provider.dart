@@ -8,6 +8,7 @@ import 'package:mornye/models/library_scan_failure.dart';
 import 'package:mornye/providers/settings_provider.dart';
 import 'package:mornye/services/library_cleanup.dart';
 import 'package:mornye/services/library_database.dart';
+import 'package:mornye/services/music_server_library.dart';
 import 'package:mornye/services/network_library_scanner.dart';
 import 'package:mornye/services/network_storage_service.dart';
 import 'package:mornye/services/notification_service.dart';
@@ -373,6 +374,17 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     await _ensureLoadedFromDatabase();
   }
 
+  Future<void> addMusicServerTrack(
+    LocalLibraryItem item, {
+    required String displayName,
+  }) async {
+    await _ensureLoadedFromDatabase();
+    await saveMusicServerLibraryItem(_db, item, displayName: displayName);
+    if (!ref.mounted) return;
+    ref.read(settingsProvider.notifier).setLocalLibraryEnabled(true);
+    await _refreshSummaryFromStorage();
+  }
+
   Future<LocalLibrarySource> addSource({
     required String path,
     required String displayName,
@@ -544,6 +556,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     bool notify = true,
     bool waitForCurrentScan = false,
   }) async {
+    // Server references are added explicitly and cannot be scanned as folders.
+    if (folderPath.startsWith('musicserver://')) return;
     if (!ref.mounted) return;
     await _recoverInterruptedScan();
     if (!ref.mounted) return;

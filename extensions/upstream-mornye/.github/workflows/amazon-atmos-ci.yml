@@ -1,0 +1,40 @@
+name: Extension source and package checks
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sources/**'
+      - 'extensions/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'registry*.json'
+      - '.github/workflows/amazon-atmos-ci.yml'
+  pull_request:
+    paths:
+      - 'sources/**'
+      - 'extensions/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'registry*.json'
+      - '.github/workflows/amazon-atmos-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Provider regressions
+        run: node --test tests/*.test.cjs
+      - name: Validate source-backed package bytes and registry hashes
+        run: python3 scripts/build_packages.py --check
+      - name: Validate every registry and packaged Python module
+        run: python3 -m unittest discover -s tests -p 'test_*.py'

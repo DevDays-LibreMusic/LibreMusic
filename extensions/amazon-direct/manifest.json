@@ -1,0 +1,103 @@
+{
+  "name": "amazon-direct",
+  "displayName": "Amazon Music Direct",
+  "version": "0.1.0",
+  "description": "Amazon Music Direct: каталог, поиск и ссылки напрямую. Скачивание DRM-аудио не поддерживается.",
+  "type": [
+    "metadata_provider"
+  ],
+  "minAppVersion": "4.9.1",
+  "permissions": {
+    "network": [
+      "na.mesk.skill.music.a2z.com",
+      "na.web.skill.music.a2z.com",
+      "music.amazon.com",
+      "music.amazon.co",
+      "music.amazon.de",
+      "music.amazon.co.uk",
+      "music.amazon.co.jp",
+      "music.amazon.fr",
+      "music.amazon.it",
+      "music.amazon.es",
+      "music.amazon.in",
+      "music.amazon.com.br",
+      "music.amazon.com.mx",
+      "music.amazon.com.au",
+      "m.media-amazon.com"
+    ],
+    "storage": true,
+    "file": false
+  },
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Search Amazon Music...",
+    "icon": "amazon",
+    "thumbnailRatio": "square",
+    "filters": [
+      {
+        "id": "songs",
+        "label": "Songs"
+      },
+      {
+        "id": "albums",
+        "label": "Albums"
+      },
+      {
+        "id": "artists",
+        "label": "Artists"
+      },
+      {
+        "id": "playlists",
+        "label": "Playlists"
+      }
+    ]
+  },
+  "urlHandler": {
+    "enabled": true,
+    "patterns": [
+      "music.amazon.com",
+      "music.amazon.co",
+      "music.amazon.de",
+      "music.amazon.co.uk",
+      "music.amazon.co.jp",
+      "music.amazon.fr",
+      "music.amazon.it",
+      "music.amazon.es",
+      "music.amazon.in",
+      "music.amazon.com.br",
+      "music.amazon.com.mx",
+      "music.amazon.com.au"
+    ]
+  },
+  "capabilities": {
+    "homeFeed": true,
+    "homeFeedRegionSetting": "homeCountry",
+    "networkTimeoutSeconds": 15,
+    "shareUrlTemplates": {
+      "album": "https://music.amazon.com/albums/{id}",
+      "artist": "https://music.amazon.com/artists/{id}"
+    }
+  },
+  "settings": [
+    {
+      "key": "homeCountry",
+      "label": "Home feed country",
+      "type": "select",
+      "default": "US",
+      "options": [
+        "US",
+        "GB",
+        "JP",
+        "DE",
+        "FR",
+        "IT",
+        "ES",
+        "IN",
+        "BR",
+        "MX",
+        "AU"
+      ],
+      "description": "Регион рекомендаций Amazon Music. Расширение предоставляет только каталог, без скачивания."
+    }
+  ]
+}

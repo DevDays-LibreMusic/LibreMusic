@@ -974,6 +974,7 @@ void main() {
         'local_album_screen.dart',
         'downloaded_album_screen.dart',
         'library_tracks_folder_screen.dart',
+        'recommendation_flow_screen.dart',
       ];
       final offenders = <String>[];
       for (final name in screens) {

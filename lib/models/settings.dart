@@ -119,6 +119,9 @@ class AppSettings {
   /// (`alsa/hw:CARD=…,DEV=…`). Empty picks the first card.
   final String exclusiveOutputDevice;
   final bool autoplay;
+
+  /// Empty keeps the original Library Autoplay behavior.
+  final String recommendationProfileId;
   final bool autoplayPersonalization;
 
   /// Analyze how each Library song sounds, on this device, so Autoplay picks
@@ -319,6 +322,7 @@ class AppSettings {
     this.exclusiveOutput = false,
     this.exclusiveOutputDevice = '',
     this.autoplay = false,
+    this.recommendationProfileId = '',
     this.autoplayPersonalization = true,
     this.songAnalysis = false,
     this.songAnalysisOnlyWhileCharging = true,
@@ -472,6 +476,7 @@ class AppSettings {
     bool? exclusiveOutput,
     String? exclusiveOutputDevice,
     bool? autoplay,
+    String? recommendationProfileId,
     bool? autoplayPersonalization,
     bool? songAnalysis,
     bool? songAnalysisOnlyWhileCharging,
@@ -612,6 +617,8 @@ class AppSettings {
       exclusiveOutputDevice:
           exclusiveOutputDevice ?? this.exclusiveOutputDevice,
       autoplay: autoplay ?? this.autoplay,
+      recommendationProfileId:
+          recommendationProfileId ?? this.recommendationProfileId,
       autoplayPersonalization:
           autoplayPersonalization ?? this.autoplayPersonalization,
       songAnalysis: songAnalysis ?? this.songAnalysis,

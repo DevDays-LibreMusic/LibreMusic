@@ -1,0 +1,25 @@
+{
+  "data_dir": "/data",
+  "extension_worker": "/usr/local/bin/music-extension-worker",
+  "max_file_bytes": 536870912,
+  "quota_bytes_per_user": 21474836480,
+  "max_queued_per_user": 20,
+  "sources": {
+    "alice": [
+      {
+        "id": "direct",
+        "name": "Direct audio URL",
+        "type": "url",
+        "allowed_hosts": ["music.example.org"],
+        "qualities": ["original"]
+      },
+      {
+        "id": "collection",
+        "name": "My collection",
+        "type": "storage",
+        "root": "/imports/alice",
+        "qualities": ["original"]
+      }
+    ]
+  }
+}

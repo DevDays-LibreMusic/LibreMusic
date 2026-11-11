@@ -1,0 +1,82 @@
+{
+  "name": "qobuz-direct",
+  "displayName": "Qobuz Direct",
+  "version": "0.1.0",
+  "description": "Qobuz напрямую через свой аккаунт, без внешнего resolver. Экспериментальная версия.",
+  "type": [
+    "metadata_provider",
+    "download_provider"
+  ],
+  "minAppVersion": "5.3.1",
+  "permissions": {
+    "network": [
+      "www.qobuz.com",
+      "*.qobuz.com",
+      "*.qobuz.fr",
+      "*.akamaized.net",
+      "*.akamaihd.net"
+    ],
+    "storage": false,
+    "file": true
+  },
+  "settings": [
+    {
+      "key": "token",
+      "type": "string",
+      "label": "user_auth_token Qobuz",
+      "secret": true,
+      "required": true
+    },
+    {
+      "key": "appId",
+      "type": "string",
+      "label": "App ID Qobuz",
+      "secret": false,
+      "required": true
+    },
+    {
+      "key": "appSecret",
+      "type": "string",
+      "label": "App secret Qobuz",
+      "secret": true,
+      "required": true
+    }
+  ],
+  "qualityOptions": [
+    {
+      "id": "mp3-320",
+      "label": "MP3 320",
+      "kind": "lossy"
+    },
+    {
+      "id": "flac",
+      "label": "FLAC CD",
+      "kind": "lossless"
+    },
+    {
+      "id": "flac-96",
+      "label": "FLAC до 96 kHz",
+      "kind": "lossless"
+    },
+    {
+      "id": "flac-192",
+      "label": "FLAC до 192 kHz",
+      "kind": "lossless"
+    }
+  ],
+  "searchBehavior": {
+    "enabled": true,
+    "placeholder": "Поиск: Qobuz"
+  },
+  "urlHandler": {
+    "enabled": true,
+    "patterns": [
+      "play.qobuz.com",
+      "open.qobuz.com",
+      "www.qobuz.com"
+    ]
+  },
+  "capabilities": {
+    "downloadFallbackTier": "lossless"
+  }
+}

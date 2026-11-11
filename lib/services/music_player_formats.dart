@@ -45,6 +45,9 @@ class _MusicFormats {
   /// or of a song it failed to open before, else its resolved source.
   Future<String?> resolve(PlayableMedia media) async {
     final path = await handler._resolveSource(media);
+    // Server media is prepared for streaming on the server. Never transcode
+    // its HTTP stream into a full local file, including on playback failure.
+    if (media.source.startsWith('musicserver://')) return path;
     if (path == null || !_avPlayer) return path;
     final format = _format(media);
     if (!(format?.never ?? false) && !_copies.has(media.source)) return path;
@@ -55,6 +58,7 @@ class _MusicFormats {
   /// a local file, or a stream of a format some system versions open.
   /// Null when there is none to try.
   Future<String?> afterFailure(PlayableMedia media, String path) async {
+    if (media.source.startsWith('musicserver://')) return null;
     if (!_avPlayer || owns(path)) return null;
     final format = _format(media);
     // A format AVPlayer never opens already had its copy attempt.

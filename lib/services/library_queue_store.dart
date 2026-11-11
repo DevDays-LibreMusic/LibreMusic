@@ -41,6 +41,71 @@ class LibraryQueueStore {
   String _notShadowedByHistory(String alias) =>
       sqlite.libraryNotShadowedSql(alias, snapshot: shadowSnapshot);
 
+  /// Narrow, seek-paged candidates. The musicserver page contains only
+  /// durable server asset references; other remote paths stay excluded.
+  Future<List<Map<String, Object?>>> recommendationPage({
+    required String source,
+    required int limit,
+    String? afterId,
+    int? minSeconds,
+    int? maxSeconds,
+    int? minYear,
+    int? maxYear,
+    bool excludeUnknown = true,
+    bool excludeMarkedExplicit = false,
+  }) {
+    final local = source != 'downloaded';
+    final musicServer = source == 'musicserver';
+    final table = local ? LibrarySchema.visibleView : 'history_db.history';
+    final where = <String>[
+      "COALESCE(song.file_path, '') != ''",
+      "song.file_path NOT LIKE 'network:%'",
+      "song.file_path NOT LIKE 'http:%'",
+      "song.file_path NOT LIKE 'https:%'",
+      if (musicServer)
+        "song.file_path LIKE 'musicserver://%'"
+      else
+        "song.file_path NOT LIKE 'musicserver:%'",
+      if (local) _notShadowedByHistory('song'),
+      if (afterId != null) 'song.id > ?',
+      if (excludeMarkedExplicit) 'COALESCE(song.explicit, 0) = 0',
+    ];
+    final args = <Object?>[?afterId];
+    void range(String expr, int? lower, int? upper) {
+      if (lower == null && upper == null) return;
+      final known = <String>['$expr > 0'];
+      if (lower != null) {
+        known.add('$expr >= ?');
+        args.add(lower);
+      }
+      if (upper != null) {
+        known.add('$expr <= ?');
+        args.add(upper);
+      }
+      final test = known.join(' AND ');
+      where.add(
+        excludeUnknown ? '($test)' : '(COALESCE($expr, 0) <= 0 OR ($test))',
+      );
+    }
+
+    range('song.duration', minSeconds, maxSeconds);
+    range(
+      "CASE WHEN substr(song.release_date, 1, 4) GLOB '[0-9][0-9][0-9][0-9]' THEN CAST(substr(song.release_date, 1, 4) AS INTEGER) END",
+      minYear,
+      maxYear,
+    );
+    return _db.rawQuery(
+      '''SELECT song.id, song.file_path, song.track_name,
+      song.artist_name, song.album_name, song.genre, song.duration,
+      song.release_date, song.explicit,
+      ${local ? 'song.id' : "CASE WHEN song.origin_file_path IS NOT NULL AND song.service IN ('Network offline', 'Mornye Link') THEN COALESCE(song.spotify_id, song.id) ELSE song.id END"} AS collection_id,
+      ${local ? "'local'" : "CASE WHEN song.origin_file_path IS NOT NULL AND song.service IN ('Network offline', 'Mornye Link') THEN 'local' ELSE song.service END"} AS collection_source,
+      ${local ? 'song.cover_path' : 'song.cover_url'} AS cover
+      FROM $table song WHERE ${where.join(' AND ')} ORDER BY song.id LIMIT ?''',
+      [...args, limit],
+    );
+  }
+
   Future<QueueLibraryDbPage> trackPage(QueueLibraryDbQuery request) =>
       _queuePage(
         request,
@@ -794,6 +859,7 @@ class LibraryQueueStore {
   }) {
     if (request.source == 'on-device') {
       where.add("h.file_path NOT LIKE 'network://%'");
+      where.add("h.file_path NOT LIKE 'musicserver://%'");
     }
     if (albumCompleteness) {
       _appendAlbumCompletenessFilter(
@@ -856,6 +922,7 @@ class LibraryQueueStore {
   }) {
     if (request.source == 'on-device') {
       where.add("l.file_path NOT LIKE 'network://%'");
+      where.add("l.file_path NOT LIKE 'musicserver://%'");
     }
     if (albumCompleteness) {
       _appendAlbumCompletenessFilter(
@@ -959,6 +1026,7 @@ class LibraryQueueStore {
   }) {
     if (request.excludeNetwork) {
       where.add("COALESCE($filePathExpr, '') NOT LIKE 'network://%'");
+      where.add("COALESCE($filePathExpr, '') NOT LIKE 'musicserver://%'");
     }
     final quality = request.quality?.trim().toLowerCase();
     if (quality != null && quality.isNotEmpty) {

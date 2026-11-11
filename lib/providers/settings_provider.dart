@@ -682,6 +682,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setDiscordRichPresenceEnabled(bool enabled) =>
       _commit(state.copyWith(discordRichPresenceEnabled: enabled));
 
+  void setRecommendationProfileId(String id) =>
+      _commit(state.copyWith(recommendationProfileId: id));
+
   void setAutoplay(bool enabled) => _commit(state.copyWith(autoplay: enabled));
 
   void setAutoplayPersonalization(bool enabled) =>

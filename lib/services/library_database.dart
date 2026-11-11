@@ -498,6 +498,32 @@ class LibraryDatabase {
     );
   }
 
+  /// Seek-paged local metadata for recommendation filtering and sampling.
+  Future<List<Map<String, Object?>>> getRecommendationPage({
+    required String source,
+    required int limit,
+    String? afterId,
+    int? minSeconds,
+    int? maxSeconds,
+    int? minYear,
+    int? maxYear,
+    bool excludeUnknown = true,
+    bool excludeMarkedExplicit = false,
+  }) => _queueRead(
+    (store) => store.recommendationPage(
+      source: source,
+      limit: limit,
+      afterId: afterId,
+      minSeconds: minSeconds,
+      maxSeconds: maxSeconds,
+      minYear: minYear,
+      maxYear: maxYear,
+      excludeUnknown: excludeUnknown,
+      excludeMarkedExplicit: excludeMarkedExplicit,
+    ),
+    includeLocal: source != 'downloaded',
+  );
+
   /// After a write a page keeps the row check, at its old cost, rather than
   /// wait for a snapshot build. An album completeness filter assesses every
   /// album, so it builds one.

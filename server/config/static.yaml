@@ -1,0 +1,139 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 2
+    fs-task-processor:
+      worker_threads: 8
+  default_task_processor: main-task-processor
+  components:
+    server:
+      listener:
+        port: 8080
+        task_processor: main-task-processor
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: warning
+          overflow_behavior: discard
+    process-starter:
+      task_processor: main-task-processor
+    music-service: {}
+    music-health:
+      path: /health
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-login:
+      path: /v1/auth/login
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 4
+      max_requests_per_second: 5
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-refresh:
+      path: /v1/auth/refresh
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-logout:
+      path: /v1/auth/logout
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-sources:
+      path: /v1/sources
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-prepare:
+      path: /v1/playback/prepare
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-downloads:
+      path: /v1/downloads
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-download:
+      path: /v1/downloads/{id}
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-cancel:
+      path: /v1/downloads/{id}/cancel
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-tracks:
+      path: /v1/tracks
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-track:
+      path: /v1/tracks/{id}
+      method: GET
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-ticket:
+      path: /v1/assets/{id}/playback-ticket
+      method: POST
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0
+    music-media:
+      path: /v1/media/{ticket}
+      method: GET,HEAD
+      task_processor: fs-task-processor
+      max_request_size: 16384
+      max_requests_in_flight: 64
+      max_requests_per_second: 100
+      request_body_size_log_limit: 0
+      response_data_size_log_limit: 0

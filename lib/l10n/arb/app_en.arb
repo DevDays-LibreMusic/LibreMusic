@@ -10503,5 +10503,363 @@
   "lyricsEditLineActions": "Line actions",
   "lyricsEditSaved": "Lyrics saved",
   "lyricsEditSaveFailed": "Couldn't save the lyrics to this file",
-  "lyricsEditReadOnly": "Lyrics can't be saved to this song's file"
+  "lyricsEditReadOnly": "Lyrics can't be saved to this song's file",
+  "musicServerTitle": "Music server",
+  "@musicServerTitle": {
+    "description": "Title of the personal or shared music streaming server page."
+  },
+  "musicServerDescription": "Stream music from your server without saving audio on this device.",
+  "@musicServerDescription": {
+    "description": "Explains the streaming-only server connection."
+  },
+  "musicServerConnect": "Connect to server",
+  "@musicServerConnect": {
+    "description": "Button to sign in to a music server."
+  },
+  "musicServerDisconnect": "Disconnect",
+  "@musicServerDisconnect": {
+    "description": "Button to sign out of the music server and revoke this device session."
+  },
+  "musicServerSource": "Music source",
+  "@musicServerSource": {
+    "description": "Selector of sources configured on the music server."
+  },
+  "musicServerUrl": "Audio URL",
+  "@musicServerUrl": {
+    "description": "Input label for a direct audio URL fetched by the server."
+  },
+  "musicServerPath": "Path in your collection",
+  "@musicServerPath": {
+    "description": "Input label for a file path relative to the configured server collection."
+  },
+  "musicServerTrackId": "Provider track ID",
+  "@musicServerTrackId": {
+    "description": "Input label for a track identifier understood by a server extension."
+  },
+  "musicServerTrack": "Track title",
+  "@musicServerTrack": {
+    "description": "Optional track title input and fallback title in the server library."
+  },
+  "musicServerQuality": "Quality",
+  "@musicServerQuality": {
+    "description": "Selector for quality offered by the selected server source."
+  },
+  "musicServerPreparing": "Preparing audio on the server…",
+  "@musicServerPreparing": {
+    "description": "Status while the server fetches and checks audio before streaming."
+  },
+  "musicServerMore": "Load more tracks",
+  "@musicServerMore": {
+    "description": "Button to fetch the next page of the server library."
+  },
+  "musicServerError": "Could not complete the request. Check the server connection, account and source settings.",
+  "@musicServerError": {
+    "description": "Generic server error without exposing URLs or credentials."
+  },
+  "musicServerSourceUnavailable": "This track's provider is not configured on your music server. Add the source on the server to stream this track.",
+  "@musicServerSourceUnavailable": {
+    "description": "Explains why an app track cannot be prepared by the connected server."
+  },
+  "musicServerListen": "Listen",
+  "@musicServerListen": {"description": "Track button and menu action to prepare and play the full track through the music server without saving audio on the device."},
+  "recTitle": "My recommendations",
+  "@recTitle": {
+    "description": "Local recommendation profiles: Title"
+  },
+  "recDescription": "Build and tune mixes on this device. Discovery finds music in your local library. Your profiles and feedback stay on this device.",
+  "@recDescription": {
+    "description": "Local recommendation profiles: Description"
+  },
+  "recCreate": "Create profile",
+  "@recCreate": {
+    "description": "Local recommendation profiles: Create"
+  },
+  "recAutoplay": "Autoplay profile",
+  "@recAutoplay": {
+    "description": "Local recommendation profiles: Autoplay"
+  },
+  "recDefaultAutoplay": "Default Library Autoplay",
+  "@recDefaultAutoplay": {
+    "description": "Local recommendation profiles: DefaultAutoplay"
+  },
+  "recRetry": "Could not load profiles. Tap to retry.",
+  "@recRetry": {
+    "description": "Local recommendation profiles: Retry"
+  },
+  "recActive": "Used for Library Autoplay",
+  "@recActive": {
+    "description": "Local recommendation profiles: Active"
+  },
+  "recUseAutoplay": "Use for Library Autoplay",
+  "@recUseAutoplay": {
+    "description": "Local recommendation profiles: UseAutoplay"
+  },
+  "recProfile": "Recommendation profile",
+  "@recProfile": {
+    "description": "Local recommendation profiles: Profile"
+  },
+  "recSave": "Save profile",
+  "@recSave": {
+    "description": "Local recommendation profiles: Save"
+  },
+  "recName": "Profile name",
+  "@recName": {
+    "description": "Local recommendation profiles: Name"
+  },
+  "recFilterHelp": "Separate values with semicolons. Values within a field match any; different filters must all match. Exclusions take priority. Leave a field empty for any value.",
+  "@recFilterHelp": {
+    "description": "Local recommendation profiles: FilterHelp"
+  },
+  "recGenres": "Include genres",
+  "@recGenres": {
+    "description": "Local recommendation profiles: Genres"
+  },
+  "recExcludedGenres": "Exclude genres",
+  "@recExcludedGenres": {
+    "description": "Local recommendation profiles: ExcludedGenres"
+  },
+  "recArtists": "Include artists",
+  "@recArtists": {
+    "description": "Local recommendation profiles: Artists"
+  },
+  "recExcludedArtists": "Exclude artists",
+  "@recExcludedArtists": {
+    "description": "Local recommendation profiles: ExcludedArtists"
+  },
+  "recFolders": "Folder paths (including subfolders)",
+  "@recFolders": {
+    "description": "Local recommendation profiles: Folders"
+  },
+  "recPlaylists": "Use songs from selected playlists (none means all)",
+  "@recPlaylists": {
+    "description": "Local recommendation profiles: Playlists"
+  },
+  "recMinSeconds": "Minimum duration (seconds)",
+  "@recMinSeconds": {
+    "description": "Local recommendation profiles: MinSeconds"
+  },
+  "recMaxSeconds": "Maximum duration (seconds)",
+  "@recMaxSeconds": {
+    "description": "Local recommendation profiles: MaxSeconds"
+  },
+  "recMinYear": "Earliest release year",
+  "@recMinYear": {
+    "description": "Local recommendation profiles: MinYear"
+  },
+  "recMaxYear": "Latest release year",
+  "@recMaxYear": {
+    "description": "Local recommendation profiles: MaxYear"
+  },
+  "recRepeatDays": "Exclude plays within this many days (0 disables)",
+  "@recRepeatDays": {
+    "description": "Local recommendation profiles: RepeatDays"
+  },
+  "recUnknown": "Exclude missing data for active filters",
+  "@recUnknown": {
+    "description": "Local recommendation profiles: Unknown"
+  },
+  "recExplicit": "Exclude tracks marked explicit",
+  "@recExplicit": {
+    "description": "Local recommendation profiles: Explicit"
+  },
+  "recExplicitHelp": "Older library metadata cannot distinguish a missing explicit tag from a clean track.",
+  "@recExplicitHelp": {
+    "description": "Local recommendation profiles: ExplicitHelp"
+  },
+  "recDiscovery": "Discovery: familiar to unplayed",
+  "@recDiscovery": {
+    "description": "Local recommendation profiles: Discovery"
+  },
+  "recDiversity": "Artist variety",
+  "@recDiversity": {
+    "description": "Local recommendation profiles: Diversity"
+  },
+  "recHistory": "Personal preferences",
+  "@recHistory": {
+    "description": "Local recommendation profiles: History"
+  },
+  "recSound": "Sound similarity",
+  "@recSound": {
+    "description": "Local recommendation profiles: Sound"
+  },
+  "recSoundHelp": "Uses existing on-device audio analysis when enabled in Playback settings. Choose a reference track below to compare sound.",
+  "@recSoundHelp": {
+    "description": "Local recommendation profiles: SoundHelp"
+  },
+  "recLearning": "Learn within this profile",
+  "@recLearning": {
+    "description": "Local recommendation profiles: Learning"
+  },
+  "recLearningHelp": "Learns from your feedback. Automatic listening feedback also requires Playback personalization to be enabled.",
+  "@recLearningHelp": {
+    "description": "Local recommendation profiles: LearningHelp"
+  },
+  "recSeed": "Reference track for this preview",
+  "@recSeed": {
+    "description": "Local recommendation profiles: Seed"
+  },
+  "recClearSeed": "Clear reference track",
+  "@recClearSeed": {
+    "description": "Local recommendation profiles: ClearSeed"
+  },
+  "recInvalid": "Enter a name and valid non-negative ranges. Minimum must not exceed maximum.",
+  "@recInvalid": {
+    "description": "Local recommendation profiles: Invalid"
+  },
+  "recFailure": "Could not complete the action. Your filters have not been relaxed. Please retry.",
+  "@recFailure": {
+    "description": "Local recommendation profiles: Failure"
+  },
+  "recGenerate": "Save and preview",
+  "@recGenerate": {
+    "description": "Local recommendation profiles: Generate"
+  },
+  "recResult": "{count} of {requested} tracks",
+  "@recResult": {
+    "description": "Local recommendation profiles: Result",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "requested": {
+        "type": "int"
+      }
+    }
+  },
+  "recShortage": "Fewer available tracks matched. Try removing a genre, playlist or date restriction, allowing missing tags, or shortening the repeat window.",
+  "@recShortage": {
+    "description": "Local recommendation profiles: Shortage"
+  },
+  "recPlay": "Play mix",
+  "@recPlay": {
+    "description": "Local recommendation profiles: Play"
+  },
+  "recQueue": "Add to queue",
+  "@recQueue": {
+    "description": "Local recommendation profiles: Queue"
+  },
+  "recPlaylist": "Save to playlist",
+  "@recPlaylist": {
+    "description": "Local recommendation profiles: Playlist"
+  },
+  "recMore": "More like this",
+  "@recMore": {
+    "description": "Local recommendation profiles: More"
+  },
+  "recLess": "Less like this",
+  "@recLess": {
+    "description": "Local recommendation profiles: Less"
+  },
+  "recExclude": "Exclude from this profile",
+  "@recExclude": {
+    "description": "Local recommendation profiles: Exclude"
+  },
+  "recSimilar": "Use as reference track",
+  "@recSimilar": {
+    "description": "Local recommendation profiles: Similar"
+  },
+  "recReset": "Reset learning for this profile",
+  "@recReset": {
+    "description": "Local recommendation profiles: Reset"
+  },
+  "recClearExclusions": "Clear excluded tracks",
+  "@recClearExclusions": {
+    "description": "Local recommendation profiles: ClearExclusions"
+  },
+  "recDelete": "Delete profile",
+  "@recDelete": {
+    "description": "Local recommendation profiles: Delete"
+  },
+  "recReasonDiscovery": "Rarely played in your library",
+  "@recReasonDiscovery": {
+    "description": "Local recommendation profiles: ReasonDiscovery"
+  },
+  "recReasonFamiliar": "A familiar track",
+  "@recReasonFamiliar": {
+    "description": "Local recommendation profiles: ReasonFamiliar"
+  },
+  "recReasonHistory": "Matches your personal preferences",
+  "@recReasonHistory": {
+    "description": "Local recommendation profiles: ReasonHistory"
+  },
+  "recReasonSound": "Similar sound to the reference",
+  "@recReasonSound": {
+    "description": "Local recommendation profiles: ReasonSound"
+  },
+  "recReasonSimilar": "Similar metadata to the reference",
+  "@recReasonSimilar": {
+    "description": "Local recommendation profiles: ReasonSimilar"
+  },
+  "recReasonFilters": "Matches your filters",
+  "@recReasonFilters": {
+    "description": "Local recommendation profiles: ReasonFilters"
+  },
+  "musicServerAddToLibrary": "Add to library (streaming)",
+  "@musicServerAddToLibrary": {"description": "Action to prepare audio on the music server and save only its streaming reference in the app library."},
+  "musicServerInLibrary": "In library",
+  "@musicServerInLibrary": {"description": "Tooltip for a server track already saved in the app library."},
+  "musicServerAddedToLibrary": "Added to library. Playback will stream from the server.",
+  "@musicServerAddedToLibrary": {"description": "Confirmation after saving a server streaming reference in the app library."},
+  "musicServerLibraryError": "Could not add the track to the library. Try again.",
+  "@musicServerLibraryError": {"description": "Error saving a server track reference in the app library."},
+  "recFlowTitle": "Recommendation flow",
+  "@recFlowTitle": {
+    "description": "Recommendation flow: Recommendation flow"
+  },
+  "recFlowSubtitle": "Music from your library, tuned by genre and mood",
+  "@recFlowSubtitle": {
+    "description": "Recommendation flow: Music from your library, tuned by genre and mood"
+  },
+  "recFlowMood": "Mood",
+  "@recFlowMood": {
+    "description": "Recommendation flow: Mood"
+  },
+  "recFlowGenres": "Genres",
+  "@recFlowGenres": {
+    "description": "Recommendation flow: Genres"
+  },
+  "recFlowAny": "Any",
+  "@recFlowAny": {
+    "description": "Recommendation flow: Any"
+  },
+  "recFlowCalm": "Calm",
+  "@recFlowCalm": {
+    "description": "Recommendation flow: Calm"
+  },
+  "recFlowEnergetic": "Energetic",
+  "@recFlowEnergetic": {
+    "description": "Recommendation flow: Energetic"
+  },
+  "recFlowBright": "Upbeat",
+  "@recFlowBright": {
+    "description": "Recommendation flow: Upbeat"
+  },
+  "recFlowMelancholic": "Melancholic",
+  "@recFlowMelancholic": {
+    "description": "Recommendation flow: Melancholic"
+  },
+  "recFlowHint": "Mood is estimated from genre tags. Choose several options to broaden the selection. Genre and mood filters apply together.",
+  "@recFlowHint": {
+    "description": "Recommendation flow: Mood is estimated from genre tags. Choose several options to broaden the selection. Genre and mood filters apply together."
+  },
+  "recFlowPlay": "Listen to flow",
+  "@recFlowPlay": {
+    "description": "Recommendation flow: Listen to flow"
+  },
+  "recFlowApplyHint": "Filters update the selection. Listen to flow applies it to playback and replaces the queue.",
+  "@recFlowApplyHint": {
+    "description": "Recommendation flow: Filters update the selection. Listen to flow applies it to playback and replaces the queue."
+  },
+  "recFlowRefresh": "Refresh selection",
+  "@recFlowRefresh": {
+    "description": "Recommendation flow: Refresh selection"
+  },
+  "recFlowEmpty": "No matching music. Try other filters or add local music to your library.",
+  "@recFlowEmpty": {
+    "description": "Recommendation flow: No matching music. Try other filters or add local music to your library."
+  },
+  "recFlowNoGenres": "No genre tags found in your library.",
+  "@recFlowNoGenres": {
+    "description": "Recommendation flow: No genre tags found in your library."
+  }
 }

@@ -166,6 +166,16 @@ List<List<ContextMenuAction>> trackOptionMenuGroups(
 
   return [
     [
+      ContextMenuAction(
+        icon: Icons.headphones_outlined,
+        label: l10n.musicServerListen,
+        onSelected: () => listenToTrack(root, track),
+      ),
+      ContextMenuAction(
+        icon: Icons.library_add_outlined,
+        label: l10n.musicServerAddToLibrary,
+        onSelected: () => addTrackToServerLibrary(root, track),
+      ),
       if (qualityVariantAction == QualityVariantMenuAction.playLocal)
         ContextMenuAction(
           icon: Icons.play_arrow_rounded,
@@ -285,6 +295,24 @@ class _TrackOptionsSheet extends ConsumerWidget {
       final l10n = context.l10n;
       return MornyeContextMenu(
         quickActions: [
+          MornyeMenuAction(
+            icon: CupertinoIcons.headphones,
+            label: l10n.musicServerListen,
+            onPressed: () {
+              final root = Navigator.of(context, rootNavigator: true).context;
+              Navigator.pop(context);
+              listenToTrack(root, track);
+            },
+          ),
+          MornyeMenuAction(
+            icon: CupertinoIcons.add_circled,
+            label: l10n.musicServerAddToLibrary,
+            onPressed: () {
+              final root = Navigator.of(context, rootNavigator: true).context;
+              Navigator.pop(context);
+              addTrackToServerLibrary(root, track);
+            },
+          ),
           MornyeMenuAction(
             icon: CupertinoIcons.arrow_down_circle_fill,
             label: l10n.dialogDownload,
@@ -487,6 +515,42 @@ class _TrackOptionsSheet extends ConsumerWidget {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
 
+              _OptionTile(
+                icon: Icons.headphones_outlined,
+                title: context.l10n.musicServerListen,
+                onTap: () {
+                  final root = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  Navigator.pop(context);
+                  listenToTrack(root, track);
+                },
+              ),
+              _OptionTile(
+                icon: Icons.library_add_outlined,
+                title: context.l10n.musicServerAddToLibrary,
+                onTap: () {
+                  final root = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  Navigator.pop(context);
+                  addTrackToServerLibrary(root, track);
+                },
+              ),
+              _OptionTile(
+                icon: Icons.download_outlined,
+                title: context.l10n.dialogDownload,
+                onTap: () {
+                  final root = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  Navigator.pop(context);
+                  downloadSingleTrack(root, ref, track);
+                },
+              ),
               if (qualityVariantAction == QualityVariantMenuAction.playLocal)
                 _OptionTile(
                   icon: Icons.play_arrow_rounded,

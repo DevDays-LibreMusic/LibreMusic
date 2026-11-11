@@ -1015,23 +1015,22 @@ void main() {
     );
   });
 
-  test(
-    'external mode routes a network fallback to the internal queue',
-    () async {
+  for (final source in [
+    'network://storage/track.flac',
+    'musicserver://account/asset',
+  ]) {
+    test('external mode routes $source to the internal queue', () async {
       container.read(settingsProvider.notifier).setPlayerMode('external');
-      playback.paths['Selected'] = 'network://storage/track.flac';
+      playback.paths['Selected'] = source;
       await container
           .read(playbackProvider.notifier)
           .playTrackList(_tracks, startIndex: 1);
-      expect(
-        player.queue[player.index!].source,
-        'network://storage/track.flac',
-      );
+      expect(player.queue[player.index!].source, source);
       expect(playback.resolvedRequests.take(2), [
         ['Unavailable'],
         ['Selected'],
       ]);
       expect(playback.resolvedRequests.last, _tracks.map((track) => track.id));
-    },
-  );
+    });
+  }
 }

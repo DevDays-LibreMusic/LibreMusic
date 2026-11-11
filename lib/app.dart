@@ -9,6 +9,8 @@ import 'package:mornye/screens/main_shell.dart';
 import 'package:mornye/screens/setup_screen.dart';
 import 'package:mornye/screens/tutorial_screen.dart';
 import 'package:mornye/screens/whats_new_screen.dart';
+import 'package:mornye/screens/music_server_screen.dart';
+import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/settings_provider.dart';
 import 'package:mornye/providers/equalizer_provider.dart';
 import 'package:mornye/services/app_navigation_service.dart';
@@ -68,6 +70,14 @@ final _routerProvider = Provider<GoRouter>((ref) {
     initialLocation: initialLocation,
     routes: [
       GoRoute(path: '/', builder: (context, state) => const MainShell()),
+      GoRoute(
+        path: '/music-server',
+        builder: (context, state) => MusicServerScreen(
+          initialTrack: state.extra is Track ? state.extra as Track : null,
+          autoPrepare: state.uri.queryParameters['prepare'] == '1',
+          addToLibrary: state.uri.queryParameters['library'] == '1',
+        ),
+      ),
       GoRoute(path: '/setup', builder: (context, state) => const SetupScreen()),
       GoRoute(
         path: '/tutorial',

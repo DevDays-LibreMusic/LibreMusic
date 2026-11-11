@@ -12,6 +12,7 @@ import 'package:mornye/widgets/preview_button.dart';
 import 'package:mornye/widgets/track_card.dart';
 import 'package:mornye/widgets/track_collection_quick_actions.dart';
 import 'package:mornye/widgets/track_list_tile.dart';
+import 'package:mornye/widgets/track_listen_button.dart';
 
 /// The desktop song table for album, playlist and folder [Track] lists, in
 /// place of
@@ -131,15 +132,15 @@ class _TrackListTableState extends ConsumerState<TrackListTable> {
                       : () => widget.onSaveCover?.call(i),
                 )
               : null,
-          titleTrailing: showPreview
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PreviewButton(track: tracks[i], size: 20, dense: true),
-                    badges(i),
-                  ],
-                )
-              : badges(i),
+          titleTrailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TrackListenButton(track: tracks[i], dense: true),
+              if (showPreview)
+                PreviewButton(track: tracks[i], size: 20, dense: true),
+              badges(i),
+            ],
+          ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

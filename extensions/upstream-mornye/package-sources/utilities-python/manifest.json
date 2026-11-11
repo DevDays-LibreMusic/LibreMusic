@@ -1,0 +1,11 @@
+{
+  "name": "utilities",
+  "displayName": "Mornye Utilities",
+  "version": "1.1.4",
+  "description": "Built-in Spotify/Tidal metadata, browser solver and signed-session utilities.",
+  "runtime": "python",
+  "entryPoint": "utilities.py",
+  "type": [
+    "runtime_utility"
+  ]
+}

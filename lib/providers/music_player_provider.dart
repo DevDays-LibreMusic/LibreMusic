@@ -15,6 +15,7 @@ import 'package:mornye/services/library_media_identity.dart';
 import 'package:mornye/services/music_player_service.dart';
 import 'package:mornye/services/remote_playback.dart';
 import 'package:mornye/utils/artist_utils.dart';
+import 'package:mornye/utils/file_access.dart' show isRemoteLibraryPath;
 
 export 'package:mornye/services/playable_media.dart'
     show playableFromHistory, playableFromLocal;
@@ -37,8 +38,7 @@ final playerUiEnabledProvider = Provider<bool>((ref) {
   return ref.watch(
     localMediaItemProvider.select(
       (state) =>
-          state.value?.extras?['source']?.toString().startsWith('network://') ??
-          false,
+          isRemoteLibraryPath(state.value?.extras?['source']?.toString()),
     ),
   );
 });
