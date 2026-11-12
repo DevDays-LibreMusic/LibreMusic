@@ -371,222 +371,255 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
             ),
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.all(gap),
-        children: [
-          Text(l10n.musicServerDescription),
-          SizedBox(height: gap),
-          if (!connected) ...[
-            TextField(
-              controller: _address,
-              decoration: InputDecoration(labelText: l10n.networkAddress),
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-            ),
-            TextField(
-              controller: _username,
-              decoration: InputDecoration(labelText: l10n.networkUsername),
-              autocorrect: false,
-            ),
-            TextField(
-              controller: _password,
-              decoration: InputDecoration(labelText: l10n.networkPassword),
-              obscureText: true,
-              enableSuggestions: false,
-              autocorrect: false,
-            ),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: EdgeInsets.all(gap),
+          children: [
+            Text(l10n.musicServerDescription),
             SizedBox(height: gap),
-            FilledButton(
-              onPressed: connection.isLoading
-                  ? null
-                  : () async {
-                      await ref
-                          .read(musicServerConnectionProvider.notifier)
-                          .login(_address.text, _username.text, _password.text);
-                      _password.clear();
-                    },
-              child: Text(l10n.musicServerConnect),
-            ),
-          ] else ...[
-            Text(_client.address),
-            TextButton(
-              onPressed: () async {
-                ++_generation;
-                _timer?.cancel();
-                try {
-                  await (await ref
-                          .read(musicPlayerControllerProvider)
-                          .ensureInitialized())
-                      ?.stop();
-                } catch (_) {}
-                try {
-                  await ref
-                      .read(musicServerConnectionProvider.notifier)
-                      .logout();
-                } catch (_) {}
-                if (mounted) {
-                  setState(() {
-                    _loaded = false;
-                    _tracks = [];
-                    _sources = [];
-                    _pending = [];
-                    _source = null;
-                    _job = null;
-                    _busy = false;
-                    _autoPrepared = false;
-                    _sourceUnavailable = false;
-                    _preparedMetadata = null;
-                  });
-                }
-              },
-              child: Text(l10n.musicServerDisconnect),
-            ),
-            if (_sources.isNotEmpty) ...[
-              DropdownButtonFormField<String>(
-                initialValue: _source?['id'] as String?,
-                decoration: InputDecoration(labelText: l10n.musicServerSource),
-                items: _sources
-                    .map(
-                      (s) => DropdownMenuItem(
-                        value: s['id'] as String,
-                        child: Text(s['name'] as String),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _busy
-                    ? null
-                    : (id) => setState(() {
-                        _source = _sources.firstWhere((s) => s['id'] == id);
-                        _quality =
-                            (_source!['qualities'] as List).first as String;
-                        final track = _trackForSource(_source);
-                        _input.text = track?.id ?? '';
-                        _sourceUnavailable =
-                            widget.initialTrack != null && track == null;
-                      }),
-              ),
+            if (!connected) ...[
               TextField(
-                controller: _input,
-                decoration: InputDecoration(
-                  labelText: switch (_source?['type']) {
-                    'url' => l10n.musicServerUrl,
-                    'storage' => l10n.musicServerPath,
-                    _ => l10n.musicServerTrackId,
-                  },
-                ),
+                controller: _address,
+                decoration: InputDecoration(labelText: l10n.networkAddress),
+                keyboardType: TextInputType.url,
                 autocorrect: false,
               ),
+              SizedBox(height: gap),
               TextField(
-                controller: _title,
-                decoration: InputDecoration(labelText: l10n.musicServerTrack),
-              ),
-              DropdownButtonFormField<String>(
-                key: ValueKey(_source?['id']),
-                initialValue: _quality,
-                decoration: InputDecoration(labelText: l10n.musicServerQuality),
-                items: ((_source?['qualities'] as List?) ?? ['original'])
-                    .cast<String>()
-                    .map((q) => DropdownMenuItem(value: q, child: Text(q)))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) setState(() => _quality = value);
-                },
+                controller: _username,
+                decoration: InputDecoration(labelText: l10n.networkUsername),
+                autocorrect: false,
               ),
               SizedBox(height: gap),
-              FilledButton.icon(
-                onPressed: _busy || _job != null ? null : () => _prepare(),
-                icon: const Icon(Icons.play_arrow),
-                label: Text(l10n.tooltipPlay),
+              TextField(
+                controller: _password,
+                decoration: InputDecoration(labelText: l10n.networkPassword),
+                obscureText: true,
+                enableSuggestions: false,
+                autocorrect: false,
               ),
-              OutlinedButton.icon(
-                onPressed: _busy || _job != null
+              SizedBox(height: gap),
+              FilledButton(
+                onPressed: connection.isLoading
                     ? null
-                    : () => _prepare(save: true),
-                icon: const Icon(Icons.library_add_outlined),
-                label: Text(l10n.musicServerAddToLibrary),
+                    : () async {
+                        await ref
+                            .read(musicServerConnectionProvider.notifier)
+                            .login(
+                              _address.text,
+                              _username.text,
+                              _password.text,
+                            );
+                        _password.clear();
+                      },
+                child: Text(l10n.musicServerConnect),
               ),
-            ],
-            if (_job != null) ...[
-              SizedBox(height: gap),
-              Text(l10n.musicServerPreparing),
-              LinearProgressIndicator(value: _progress),
-              TextButton(onPressed: _cancel, child: Text(l10n.dialogCancel)),
-            ],
-            SizedBox(height: gap),
-            ..._pending
-                .where((job) => job['id'] != _job?['id'])
-                .map(
-                  (job) => ListTile(
-                    leading: Icon(
-                      job['state'] == 'failed'
-                          ? Icons.error_outline
-                          : Icons.hourglass_top,
-                    ),
-                    title: Text(
-                      (job['title'] as String).isEmpty
-                          ? l10n.musicServerTrack
-                          : job['title'] as String,
-                    ),
-                    subtitle: Text(
-                      job['state'] == 'failed'
-                          ? l10n.musicServerError
-                          : l10n.musicServerPreparing,
-                    ),
-                    onTap: _busy || job['state'] == 'failed'
-                        ? null
-                        : () {
-                            ++_generation;
-                            _timer?.cancel();
-                            setState(() {
-                              _job = job;
-                              _addWhenReady = false;
-                              _preparedMetadata = null;
-                            });
-                            unawaited(_poll());
-                          },
-                  ),
-                ),
-            ..._tracks.map(
-              (track) => ListTile(
-                leading: const Icon(Icons.music_note),
-                title: Text(
-                  (track['title'] as String).isEmpty
-                      ? l10n.musicServerTrack
-                      : track['title'] as String,
-                ),
-                subtitle: Text(track['artist'] as String? ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _libraryButton(track),
-                    AppIconButton(
-                      tooltip: l10n.tooltipPlay,
-                      icon: const Icon(Icons.play_arrow),
-                      onPressed: () => _play(track),
-                    ),
-                  ],
-                ),
-                onTap: () => _play(track),
-              ),
-            ),
-            if (_nextOffset != null)
+            ] else ...[
+              Text(_client.address),
               TextButton(
-                onPressed: _busy ? null : () => _load(more: true),
-                child: Text(l10n.musicServerMore),
+                onPressed: () async {
+                  ++_generation;
+                  _timer?.cancel();
+                  try {
+                    await (await ref
+                            .read(musicPlayerControllerProvider)
+                            .ensureInitialized())
+                        ?.stop();
+                  } catch (_) {}
+                  try {
+                    await ref
+                        .read(musicServerConnectionProvider.notifier)
+                        .logout();
+                  } catch (_) {}
+                  if (mounted) {
+                    setState(() {
+                      _loaded = false;
+                      _tracks = [];
+                      _sources = [];
+                      _pending = [];
+                      _source = null;
+                      _job = null;
+                      _busy = false;
+                      _autoPrepared = false;
+                      _sourceUnavailable = false;
+                      _preparedMetadata = null;
+                    });
+                  }
+                },
+                child: Text(l10n.musicServerDisconnect),
+              ),
+              if (_sources.isNotEmpty) ...[
+                SizedBox(height: gap),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: _source?['id'] as String?,
+                  decoration: InputDecoration(
+                    labelText: l10n.musicServerSource,
+                  ),
+                  items: _sources
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s['id'] as String,
+                          child: Text(
+                            s['name'] as String,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: _busy
+                      ? null
+                      : (id) => setState(() {
+                          _source = _sources.firstWhere((s) => s['id'] == id);
+                          _quality =
+                              (_source!['qualities'] as List).first as String;
+                          final track = _trackForSource(_source);
+                          _input.text = track?.id ?? '';
+                          _sourceUnavailable =
+                              widget.initialTrack != null && track == null;
+                        }),
+                ),
+                SizedBox(height: gap),
+                TextField(
+                  controller: _input,
+                  decoration: InputDecoration(
+                    labelText: switch (_source?['type']) {
+                      'url' => l10n.musicServerUrl,
+                      'storage' => l10n.musicServerPath,
+                      _ => l10n.musicServerTrackId,
+                    },
+                  ),
+                  autocorrect: false,
+                ),
+                SizedBox(height: gap),
+                TextField(
+                  controller: _title,
+                  decoration: InputDecoration(labelText: l10n.musicServerTrack),
+                ),
+                SizedBox(height: gap),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  key: ValueKey(_source?['id']),
+                  initialValue: _quality,
+                  decoration: InputDecoration(
+                    labelText: l10n.musicServerQuality,
+                  ),
+                  items: ((_source?['qualities'] as List?) ?? ['original'])
+                      .cast<String>()
+                      .map(
+                        (q) => DropdownMenuItem(
+                          value: q,
+                          child: Text(
+                            q,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) setState(() => _quality = value);
+                  },
+                ),
+                SizedBox(height: gap),
+                FilledButton.icon(
+                  onPressed: _busy || _job != null ? null : () => _prepare(),
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text(l10n.tooltipPlay),
+                ),
+                SizedBox(height: gap),
+                OutlinedButton.icon(
+                  onPressed: _busy || _job != null
+                      ? null
+                      : () => _prepare(save: true),
+                  icon: const Icon(Icons.library_add_outlined),
+                  label: Text(l10n.musicServerAddToLibrary),
+                ),
+              ],
+              if (_job != null) ...[
+                SizedBox(height: gap),
+                Text(l10n.musicServerPreparing),
+                LinearProgressIndicator(value: _progress),
+                TextButton(onPressed: _cancel, child: Text(l10n.dialogCancel)),
+              ],
+              SizedBox(height: gap),
+              ..._pending
+                  .where((job) => job['id'] != _job?['id'])
+                  .map(
+                    (job) => ListTile(
+                      leading: Icon(
+                        job['state'] == 'failed'
+                            ? Icons.error_outline
+                            : Icons.hourglass_top,
+                      ),
+                      title: Text(
+                        (job['title'] as String).isEmpty
+                            ? l10n.musicServerTrack
+                            : job['title'] as String,
+                      ),
+                      subtitle: Text(
+                        job['state'] == 'failed'
+                            ? l10n.musicServerError
+                            : l10n.musicServerPreparing,
+                      ),
+                      onTap: _busy || job['state'] == 'failed'
+                          ? null
+                          : () {
+                              ++_generation;
+                              _timer?.cancel();
+                              setState(() {
+                                _job = job;
+                                _addWhenReady = false;
+                                _preparedMetadata = null;
+                              });
+                              unawaited(_poll());
+                            },
+                    ),
+                  ),
+              ..._tracks.map(
+                (track) => ListTile(
+                  leading: const Icon(Icons.music_note),
+                  title: Text(
+                    (track['title'] as String).isEmpty
+                        ? l10n.musicServerTrack
+                        : track['title'] as String,
+                  ),
+                  subtitle: Text(track['artist'] as String? ?? ''),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _libraryButton(track),
+                      AppIconButton(
+                        tooltip: l10n.tooltipPlay,
+                        icon: const Icon(Icons.play_arrow),
+                        onPressed: () => _play(track),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _play(track),
+                ),
+              ),
+              if (_nextOffset != null)
+                TextButton(
+                  onPressed: _busy ? null : () => _load(more: true),
+                  child: Text(l10n.musicServerMore),
+                ),
+            ],
+            if (_busy || connection.isLoading) const LinearProgressIndicator(),
+            if (_sourceUnavailable)
+              Padding(
+                padding: EdgeInsets.only(top: gap),
+                child: Text(l10n.musicServerSourceUnavailable),
+              ),
+            if (_failed || connection.hasError)
+              Padding(
+                padding: EdgeInsets.only(top: gap),
+                child: Text(l10n.musicServerError),
               ),
           ],
-          if (_busy || connection.isLoading) const LinearProgressIndicator(),
-          if (_sourceUnavailable)
-            Padding(
-              padding: EdgeInsets.only(top: gap),
-              child: Text(l10n.musicServerSourceUnavailable),
-            ),
-          if (_failed || connection.hasError)
-            Padding(
-              padding: EdgeInsets.only(top: gap),
-              child: Text(l10n.musicServerError),
-            ),
-        ],
+        ),
       ),
     );
   }

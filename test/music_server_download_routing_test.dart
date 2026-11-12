@@ -128,7 +128,8 @@ class _Server {
         'sources': [
           {
             'id': 'server-source',
-            'name': 'Server source',
+            'name':
+                'Server source with a very long descriptive name for mobile screens',
             'type': 'extension',
             'provider_id': provider,
             'qualities': ['LOSSLESS'],
@@ -328,6 +329,25 @@ Future<void> _pumpServer(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('server source selector fits narrow mobile viewport', (
+    tester,
+  ) async {
+    final server = _Server();
+    final client = MusicServerClient(
+      client: MockClient(server.respond),
+      readSession: () async => _savedSession,
+      writeSession: (_) async {},
+    );
+    await _showActions(tester, client, _LocalQueue(), action: 'Listen');
+    await _pumpServer(tester);
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
   for (final ready in [false, true]) {
     testWidgets(
       'Trends Listen uses a matching origin and streams only ready audio: reuse $ready',
