@@ -1,6 +1,6 @@
 // ============================================
 // SoundCloud Extension for Mornye
-// Version: 1.0.13
+// Version: 1.0.15
 //
 // Uses SoundCloud's api-v2 metadata, AAC HLS and legacy progressive streams.
 //
@@ -860,7 +860,7 @@ function checkAvailability(isrc, trackName, artistName, options) {
     // Verify it exists and is playable
     try {
       var track = fetchTrackData(scId);
-      if (track && track.access === "playable" && track.streamable) {
+      if (track && track.streamable && (track.access == null || track.access === "playable")) {
         return {
           available: true,
           track_id: String(track.id),
@@ -911,7 +911,7 @@ function checkAvailability(isrc, trackName, artistName, options) {
       var tracks = data.collection || [];
 
       var best = findBestMatch(tracks, trackName, artistName, targetDurationMs, 65, true);
-      if (best && best.access === "playable" && best.streamable !== false) {
+      if (best && best.streamable !== false && (best.access == null || best.access === "playable")) {
         trackCacheSet(best.id, best);
         return {
           available: true,
