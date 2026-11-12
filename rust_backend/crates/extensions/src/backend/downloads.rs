@@ -352,7 +352,17 @@ impl Backend {
         );
         let mut last = None;
         let mut attempts = VecDeque::new();
-        if !request.source.is_empty() && selected == request.source {
+        let available_direct_source = request.use_fallback
+            && (selected.is_empty()
+                || !self
+                    .account_download_enabled(&selected)
+                    .map_err(|error| error.to_string())?)
+            && source_availability.as_ref().is_some_and(|availability| {
+                availability["available"] == true
+                    && availability["skip_fallback"] == true
+                    && availability["fallback_scope"] == "provider"
+            });
+        if !request.source.is_empty() && (selected == request.source || available_direct_source) {
             attempts.push_back((request.source.clone(), true));
         }
         let mut fallback = Some(priority);

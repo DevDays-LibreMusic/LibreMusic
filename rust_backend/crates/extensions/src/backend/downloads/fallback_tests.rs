@@ -56,6 +56,8 @@ impl Fixture {
                 // Even a provider requesting custom matching may not publish a
                 // different recording through the new scoped cross-source path.
                 manifest["trackMatching"] = json!({"customMatching":true});
+                manifest["capabilities"] =
+                    json!({"accountDownloadMode":{"setting":"mode","value":"personal"}});
                 if metadata.is_some() {
                     manifest["type"] = json!(["metadata_provider", "download_provider"]);
                 }
@@ -445,4 +447,75 @@ fn unavailable_source_is_not_queried_again_for_optional_metadata_before_fallback
         "0"
     );
     assert_eq!(fixture.stats("soundcloud")["checks"], 1);
+}
+
+#[test]
+fn available_scoped_source_is_tried_first_even_when_another_service_is_default() {
+    let encoded = base64::engine::general_purpose::STANDARD.encode(b"ID3source recording");
+    let fixture = Fixture::new(
+        AVAILABLE,
+        &format!(
+            "const path=outputPath.replace(/\\.[^.]+$/,'.mp3'); file.writeBytes(path,{encoded}); return {{success:true,file_path:path,actual_extension:'mp3'}};",
+            encoded = json!(encoded)
+        ),
+        recording(),
+        false,
+        false,
+    );
+    let result = fixture.run("example.fallback", true);
+    assert_eq!(result["success"], true, "{result}");
+    assert_eq!(result["service"], "soundcloud", "{result}");
+    assert_eq!(
+        fixture.stats("soundcloud"),
+        json!({"checks":1,"downloads":1})
+    );
+    assert_eq!(
+        fixture.stats("example.fallback"),
+        json!({"checks":0,"downloads":0})
+    );
+}
+
+#[test]
+fn scoped_source_failure_then_uses_the_different_default_service_once() {
+    let fixture = Fixture::new(AVAILABLE, FAILED_DOWNLOAD, recording(), false, false);
+    let result = fixture.run("example.fallback", true);
+    assert_eq!(result["success"], true, "{result}");
+    assert_eq!(result["service"], "example.fallback", "{result}");
+    assert_eq!(
+        fixture.stats("soundcloud"),
+        json!({"checks":1,"downloads":1})
+    );
+    assert_eq!(
+        fixture.stats("example.fallback"),
+        json!({"checks":1,"downloads":1})
+    );
+}
+
+#[test]
+fn selected_personal_account_is_not_preempted_by_public_scoped_source() {
+    let fixture = Fixture::new(
+        AVAILABLE,
+        "throw new Error('source must not preempt selected account');",
+        recording(),
+        false,
+        false,
+    );
+    fixture
+        .backend
+        .update_settings(
+            "example.fallback",
+            serde_json::from_value(json!({"mode":"personal"})).unwrap(),
+        )
+        .unwrap();
+    let result = fixture.run("example.fallback", true);
+    assert_eq!(result["success"], true, "{result}");
+    assert_eq!(result["service"], "example.fallback", "{result}");
+    assert_eq!(
+        fixture.stats("soundcloud"),
+        json!({"checks":1,"downloads":0})
+    );
+    assert_eq!(
+        fixture.stats("example.fallback"),
+        json!({"checks":1,"downloads":1})
+    );
 }
