@@ -856,22 +856,38 @@ function checkAvailability(isrc, trackName, artistName, options) {
   var scId = options && options.spotify_id;
   var source = String(options && options.track && options.track.provider_id || "").trim().toLowerCase();
   var directTrack = source === "soundcloud" || (!source && !trackName && !artistName);
+  // A direct ID forbids substituting another SoundCloud upload. With full
+  // recording metadata, other providers may still resolve the same recording;
+  // the host validates their artist, version and duration before publication.
+  var fallbackScope = String(trackName || "").trim() &&
+    String(artistName || "").trim() && Number(options && options.duration_ms) > 0
+    ? "provider" : "recording";
   if (directTrack && scId && /^\d{5,}$/.test(scId)) {
     // Verify it exists and is playable
     try {
       var track = fetchTrackData(scId);
+      if (track && String(track.id) !== String(scId)) {
+        return {
+          available: false,
+          skip_fallback: true,
+          fallback_scope: "recording",
+          reason: "direct SoundCloud lookup returned a different recording ID"
+        };
+      }
       if (track && track.streamable && (track.access == null || track.access === "playable")) {
         return {
           available: true,
           track_id: String(track.id),
           prepared_context: { track: track },
           skip_fallback: true,
+          fallback_scope: fallbackScope,
           reason: "direct SoundCloud track ID"
         };
       }
       return {
         available: false,
         skip_fallback: true,
+        fallback_scope: fallbackScope,
         reason: "direct SoundCloud track is not playable"
       };
     } catch (e) {
@@ -879,6 +895,7 @@ function checkAvailability(isrc, trackName, artistName, options) {
       return {
         available: false,
         skip_fallback: true,
+        fallback_scope: fallbackScope,
         reason: "direct SoundCloud lookup failed: " + e.message
       };
     }

@@ -1066,7 +1066,7 @@ class WaveSessionController extends Notifier<WaveSessionState> {
           response['error_type'] == 'verification_required') {
         if (!foreground) throw const WaveVerificationRequired();
         if (!await openVerificationAndAwaitGrant(
-          service,
+          response.service ?? service,
           browserMode: settings.extensionVerificationBrowserMode,
         )) {
           throw const WaveVerificationRequired();

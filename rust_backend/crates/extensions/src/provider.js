@@ -290,7 +290,7 @@
         searchTracks: search, customSearch: value => array(value, track), handleUrl: url,
         getRelatedTracks: value => array(value, track),
         checkAvailability: value => fields(value, [["available","b"],["reason","s"],["track_id","s","trackId"],
-            ["skip_fallback","b","skipFallback"],["prepared_context","m","preparedContext"]], ["available"]),
+            ["skip_fallback","b","skipFallback"],["fallback_scope","s","fallbackScope"],["prepared_context","m","preparedContext"]], ["available"]),
         download, fetchLyrics: lyrics,
         postProcessV2: value => fields(value, [["success","b"],["new_file_path","s","newFilePath"],
             ["new_file_uri","s","newFileUri"],["error","s"],["bit_depth","i","bitDepth"],["sample_rate","i","sampleRate"]], ["success"])

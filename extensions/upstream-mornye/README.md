@@ -16,6 +16,25 @@
 - Clear description of what extension does
 - Working download URL and icon URL
 
+## Availability fallback scope
+
+`checkAvailability` can return `skip_fallback: true` to protect a specific
+recording. Without `fallback_scope`, or with `fallback_scope: "recording"`, this
+stops the entire provider chain. Unknown scopes also fail closed.
+
+`fallback_scope: "provider"` instead means that the source must not search for
+another upload of its own. If the user enabled fallback, the host can try the
+configured other services for the same recording. It verifies the resolved
+recording's artist, title/version and duration before publishing the file;
+conflicting ISRCs are rejected. Account-only mode and other explicit provider
+locks still apply.
+
+SoundCloud 1.0.16 uses provider scope for direct IDs with a nonempty artist and
+title and a known positive duration. Missing identity metadata or a different ID
+returned by the source keeps the recording-wide veto. Use the updated APK and
+companion SoundCloud package together; installing an APK does not replace an
+extension already installed on the phone.
+
 ## Developing the bundled providers
 
 Spotify, Amazon, Apple Music, YouTube Music, SoundCloud, Tidal, Qobuz, Deezer, JioSaavn, Bugs Music,

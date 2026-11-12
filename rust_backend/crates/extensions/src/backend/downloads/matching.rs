@@ -94,6 +94,24 @@ pub(super) fn matches_track(request: &DownloadRequest, result: &Value, skip_name
     true
 }
 
+/// Evidence required to leave a provider-scoped direct recording. A custom
+/// matcher cannot substitute a similarly named artist, live version, or preview.
+pub(super) fn strict_recording_match(request: &DownloadRequest, result: &Value) -> bool {
+    let title = text(result, "title");
+    let artist = text(result, "artist");
+    let isrc = text(result, "isrc").trim();
+    !request.track_name.trim().is_empty()
+        && !title.trim().is_empty()
+        && !request.artist_name.trim().is_empty()
+        && !artist.trim().is_empty()
+        && exact_identity(&request.track_name, title, track_identity_title)
+        && exact_identity(&request.artist_name, artist, normalize_loose_artist)
+        && duration_matches(request, result)
+        && (request.isrc.trim().is_empty()
+            || isrc.is_empty()
+            || request.isrc.trim().eq_ignore_ascii_case(isrc))
+}
+
 pub(super) fn exact_identity(expected: &str, found: &str, normalize: fn(&str) -> String) -> bool {
     let (left, right) = (normalize(expected), normalize(found));
     if !left.is_empty() && !right.is_empty() {
