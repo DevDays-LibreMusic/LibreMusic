@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
+import 'package:mornye/screens/discovery_screen.dart';
 import 'package:mornye/controllers/open_audio_controller.dart';
 import 'package:mornye/services/audio_file_open_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -92,7 +93,8 @@ ShellTab shellTabAt(
   if (index == 0) return ShellTab.home;
   if (index == 1) return ShellTab.library;
   if (showStore && index == 2) return ShellTab.repository;
-  if (mornye && index == (showStore ? 3 : 2)) return ShellTab.search;
+  if (index == (showStore ? 3 : 2)) return ShellTab.discovery;
+  if (mornye && index == (showStore ? 4 : 3)) return ShellTab.search;
   return ShellTab.settings;
 }
 
@@ -107,15 +109,16 @@ int? shellIndexOfTab(
 }) => switch (tab) {
   ShellTab.home => 0,
   ShellTab.library => 1,
+  ShellTab.discovery => showStore ? 3 : 2,
   ShellTab.repository => showStore ? 2 : null,
   // Material searches from Home.
-  ShellTab.search => mornye ? (showStore ? 3 : 2) : 0,
+  ShellTab.search => mornye ? (showStore ? 4 : 3) : 0,
   // Mornye phones open Settings as a page, not a destination.
   ShellTab.settings =>
     !mornye
-        ? (showStore ? 3 : 2)
-        : desktop
         ? (showStore ? 4 : 3)
+        : desktop
+        ? (showStore ? 5 : 4)
         : null,
 };
 
@@ -159,6 +162,8 @@ class _MainShellState extends ConsumerState<MainShell>
       ShellNavigationService.libraryTabNavigatorKey;
   final GlobalKey<NavigatorState> _repoTabNavigatorKey =
       ShellNavigationService.repoTabNavigatorKey;
+  final GlobalKey<NavigatorState> _discoveryTabNavigatorKey =
+      ShellNavigationService.discoveryTabNavigatorKey;
   final GlobalKey<NavigatorState> _searchTabNavigatorKey =
       ShellNavigationService.searchTabNavigatorKey;
 
@@ -166,6 +171,7 @@ class _MainShellState extends ConsumerState<MainShell>
   late final _PreviewStopNavigatorObserver _libraryPreviewStopObserver;
   late final _PreviewStopNavigatorObserver _repoPreviewStopObserver;
   late final _PreviewStopNavigatorObserver _searchPreviewStopObserver;
+  late final _PreviewStopNavigatorObserver _discoveryPreviewStopObserver;
 
   /// Desktop: whether Library shows its root page, so the Mornye sidebar
   /// returns to the Library root's link and the Material rail to Library.
@@ -257,6 +263,9 @@ class _MainShellState extends ConsumerState<MainShell>
       () => ref.read(previewPlayerProvider.notifier).stop(),
     );
     _repoPreviewStopObserver = _PreviewStopNavigatorObserver(
+      () => ref.read(previewPlayerProvider.notifier).stop(),
+    );
+    _discoveryPreviewStopObserver = _PreviewStopNavigatorObserver(
       () => ref.read(previewPlayerProvider.notifier).stop(),
     );
     _searchPreviewStopObserver = _PreviewStopNavigatorObserver(
@@ -469,7 +478,7 @@ class _MainShellState extends ConsumerState<MainShell>
       context.isMornye && (isDesktopPlatform || isAndroidTv);
 
   int _settingsIndex(bool showStore) =>
-      context.isMornye ? (showStore ? 4 : 3) : (showStore ? 3 : 2);
+      context.isMornye ? (showStore ? 5 : 4) : (showStore ? 4 : 3);
 
   void _onShellTabRequested(ShellTab tab) {
     // Picking a destination returns from Now Playing to the content pane.
@@ -483,8 +492,9 @@ class _MainShellState extends ConsumerState<MainShell>
     );
     final index = switch (tab) {
       ShellTab.home => 0,
-      ShellTab.search => context.isMornye ? (showStore ? 3 : 2) : 0,
+      ShellTab.search => context.isMornye ? (showStore ? 4 : 3) : 0,
       ShellTab.library => 1,
+      ShellTab.discovery => showStore ? 3 : 2,
       ShellTab.repository => showStore ? 2 : null,
       ShellTab.settings => _settingsIndex(showStore),
     };
@@ -616,7 +626,7 @@ class _MainShellState extends ConsumerState<MainShell>
 
     final trackState = ref.read(trackProvider);
     final isSearchTab =
-        _currentIndex == (context.isMornye ? (showStore ? 3 : 2) : 0);
+        _currentIndex == (context.isMornye ? (showStore ? 4 : 3) : 0);
 
     if (isSearchTab &&
         trackState.isShowingRecentAccess &&
@@ -689,6 +699,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (index == 0) return ShellTab.home;
     if (index == 1) return ShellTab.library;
     if (showStore && index == 2) return ShellTab.repository;
+    if (index == (showStore ? 3 : 2)) return ShellTab.discovery;
     if (_mornyeSettingsTab && index == _settingsIndex(showStore)) {
       return ShellTab.settings;
     }
@@ -735,6 +746,12 @@ class _MainShellState extends ConsumerState<MainShell>
                 : Icons.extension,
             label: l10n.navStore,
             badgeCount: repoUpdatesCount,
+          ),
+          ShellTab.discovery => DesktopDestination(
+            tab: tab,
+            icon: Icons.explore_outlined,
+            selectedIcon: Icons.explore,
+            label: l10n.discoveryTitle,
           ),
           ShellTab.search => DesktopDestination(
             tab: tab,
@@ -901,7 +918,10 @@ class _MainShellState extends ConsumerState<MainShell>
     if (index == 0) return _homeTabNavigatorKey.currentState;
     if (index == 1) return _libraryTabNavigatorKey.currentState;
     if (showStore && index == 2) return _repoTabNavigatorKey.currentState;
-    if (context.isMornye && index == (showStore ? 3 : 2)) {
+    if (index == (showStore ? 3 : 2)) {
+      return _discoveryTabNavigatorKey.currentState;
+    }
+    if (context.isMornye && index == (showStore ? 4 : 3)) {
       return _searchTabNavigatorKey.currentState;
     }
     return null;
@@ -975,6 +995,13 @@ class _MainShellState extends ConsumerState<MainShell>
           heroAnimationsEnabled: heroAnimationsEnabled,
           child: const RepoTab(),
         ),
+      _TabNavigator(
+        key: const ValueKey('tab-discovery'),
+        navigatorKey: _discoveryTabNavigatorKey,
+        observers: [_discoveryPreviewStopObserver],
+        heroAnimationsEnabled: heroAnimationsEnabled,
+        child: const DiscoveryScreen(),
+      ),
       if (!context.isMornye) const SettingsTab(),
       if (context.isMornye)
         _TabNavigator(
@@ -1215,6 +1242,11 @@ class _MainShellState extends ConsumerState<MainShell>
           ),
           label: l10n.navStore,
         ),
+      NavigationDestination(
+        icon: const AppIcon(Icons.explore_outlined),
+        selectedIcon: const AppIcon(Icons.explore),
+        label: l10n.discoveryNewReleases,
+      ),
       if (!context.isMornye)
         NavigationDestination(
           icon: const AppIcon(Icons.settings_outlined),

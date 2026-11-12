@@ -776,10 +776,16 @@ void main() {
       await pumpShell(tester, mornye: true, width: 1400);
 
       expect(find.byTooltip('library (Ctrl+2)'), findsOneWidget);
-      expect(find.byTooltip('settings (Ctrl+5)'), findsOneWidget);
+      expect(find.byTooltip('settings (Ctrl+6)'), findsOneWidget);
+      expect(find.byTooltip('discovery (Ctrl+4)'), findsOneWidget);
+      await tester.tap(find.text('discovery'));
       await tester.tap(find.text('library'));
       await tester.tap(find.byKey(const ValueKey('desktop-sidebar-settings')));
-      expect(selections, [ShellTab.library, ShellTab.settings]);
+      expect(selections, [
+        ShellTab.discovery,
+        ShellTab.library,
+        ShellTab.settings,
+      ]);
 
       final home = tester.getRect(
         find.ancestor(of: find.text('home'), matching: find.byType(InkWell)),

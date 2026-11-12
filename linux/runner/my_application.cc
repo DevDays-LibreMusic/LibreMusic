@@ -411,6 +411,9 @@ static void my_application_activate(GApplication* application) {
   }
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
+  // Impeller's Linux OpenGL renderer corrupts bitmap artwork on some desktop
+  // drivers. Use the hardware-accelerated Skia renderer for reliable covers.
+  fl_dart_project_set_enable_impeller(project, FALSE);
   fl_dart_project_set_dart_entrypoint_arguments(
       project, self->dart_entrypoint_arguments);
 

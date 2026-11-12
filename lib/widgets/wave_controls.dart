@@ -304,6 +304,7 @@ Future<void> showWaveSettings(BuildContext context) =>
       useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
       builder: (_) => const FractionallySizedBox(
         heightFactor: .85,
         child: WaveSettingsBody(),
@@ -509,6 +510,7 @@ Future<void> showWaveArtistPicker(BuildContext context) =>
       useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
       builder: (_) => const FractionallySizedBox(
         heightFactor: .85,
         child: _WaveArtistPicker(),
@@ -572,86 +574,83 @@ class _WaveArtistPickerState extends ConsumerState<_WaveArtistPicker> {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(
-      24,
-      8,
-      24,
-      16 + MediaQuery.viewInsetsOf(context).bottom,
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          waveText(context, 'С чего начнём?', 'Where shall we start?'),
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          waveText(
-            context,
-            'Выбери несколько любимых исполнителей для разнообразной волны.',
-            'Choose a few favorite artists for a varied wave.',
+    padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    child: SafeArea(
+      top: false,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        children: [
+          Text(
+            waveText(context, 'С чего начнём?', 'Where shall we start?'),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _query,
-          textInputAction: TextInputAction.search,
-          onSubmitted: _search,
-          decoration: InputDecoration(
-            labelText: waveText(context, 'Найти исполнителя', 'Find an artist'),
-            suffixIcon: IconButton(
-              tooltip: waveText(context, 'Поиск', 'Search'),
-              onPressed: () => _search(_query.text),
-              icon: const Icon(Icons.search),
+          const SizedBox(height: 8),
+          Text(
+            waveText(
+              context,
+              'Выбери несколько любимых исполнителей для разнообразной волны.',
+              'Choose a few favorite artists for a varied wave.',
             ),
           ),
-        ),
-        if (_searching) const LinearProgressIndicator(),
-        if (_error != null)
-          Text(
-            _error!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        Expanded(
-          child: ListView(
-            children: [
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final artist in _selected)
-                    InputChip(
-                      label: Text(artist),
-                      onDeleted: () => setState(() => _selected.remove(artist)),
-                    ),
-                ],
+          const SizedBox(height: 16),
+          TextField(
+            controller: _query,
+            textInputAction: TextInputAction.search,
+            onSubmitted: _search,
+            decoration: InputDecoration(
+              labelText: waveText(
+                context,
+                'Найти исполнителя',
+                'Find an artist',
               ),
-              for (final artist in _results)
-                CheckboxListTile(
-                  title: Text(artist),
-                  value: _selected.contains(artist),
-                  onChanged: (value) => setState(() {
-                    if (value == true) {
-                      _selected.add(artist);
-                    } else {
-                      _selected.remove(artist);
-                    }
-                  }),
+              suffixIcon: IconButton(
+                tooltip: waveText(context, 'Поиск', 'Search'),
+                onPressed: () => _search(_query.text),
+                icon: const Icon(Icons.search),
+              ),
+            ),
+          ),
+          if (_searching) const LinearProgressIndicator(),
+          if (_error != null)
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final artist in _selected)
+                InputChip(
+                  label: Text(artist),
+                  onDeleted: () => setState(() => _selected.remove(artist)),
                 ),
             ],
           ),
-        ),
-        FilledButton(
-          onPressed: _selected.isEmpty
-              ? null
-              : () async {
-                  final controller = ref.read(waveSessionProvider.notifier);
-                  await controller.setSeedArtists(_selected);
-                  if (context.mounted) Navigator.pop(context);
-                },
-          child: Text(waveText(context, 'Готово', 'Done')),
-        ),
-      ],
+          for (final artist in _results)
+            CheckboxListTile(
+              title: Text(artist),
+              value: _selected.contains(artist),
+              onChanged: (value) => setState(() {
+                if (value == true) {
+                  _selected.add(artist);
+                } else {
+                  _selected.remove(artist);
+                }
+              }),
+            ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _selected.isEmpty
+                ? null
+                : () async {
+                    final controller = ref.read(waveSessionProvider.notifier);
+                    await controller.setSeedArtists(_selected);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+            child: Text(waveText(context, 'Готово', 'Done')),
+          ),
+        ],
+      ),
     ),
   );
 }

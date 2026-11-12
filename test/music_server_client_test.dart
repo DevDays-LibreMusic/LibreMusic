@@ -3,10 +3,53 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mornye/services/local_network_access.dart';
 import 'package:mornye/services/music_server_client.dart';
 import 'package:mornye/services/playable_media.dart';
 
 void main() {
+  test(
+    'checks LAN access before login and after permission revocation',
+    () async {
+      var granted = true;
+      var requests = 0;
+      final checked = <Uri>[];
+      final client = MusicServerClient(
+        ensureAccess: (target) async {
+          checked.add(target);
+          if (!granted) throw const LocalNetworkPermissionException();
+        },
+        client: MockClient((request) async {
+          requests++;
+          return http.Response(
+            '{"access_token":"a","refresh_token":"r","user_id":"alice"}',
+            200,
+          );
+        }),
+        readSession: () async => null,
+        writeSession: (_) async {},
+      );
+      const address = 'https://192.168.1.10';
+      await client.login(address, 'alice', 'password');
+      expect(requests, 1);
+      granted = false;
+      await expectLater(
+        client.request('GET', '/v1/library'),
+        throwsA(isA<LocalNetworkPermissionException>()),
+      );
+      await expectLater(
+        client.login(address, 'alice', 'password'),
+        throwsA(isA<LocalNetworkPermissionException>()),
+      );
+      expect(
+        requests,
+        1,
+        reason: 'Denied access must not send credentials or API requests',
+      );
+      expect(checked, List.filled(3, Uri.parse(address)));
+    },
+  );
+
   test('requires HTTPS except for loopback development', () {
     expect(
       MusicServerClient.validateAddress('https://music.example.org').scheme,

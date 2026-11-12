@@ -8,6 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mornye/l10n/app_localizations.dart';
+import 'package:mornye/constants/app_info.dart';
+import 'package:mornye/models/discovery.dart';
+import 'package:mornye/providers/discovery_provider.dart';
+import 'package:mornye/screens/discovery_screen.dart';
 import 'package:mornye/models/download_item.dart';
 import 'package:mornye/models/settings.dart';
 import 'package:mornye/models/track.dart';
@@ -89,6 +93,21 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          discoveryCatalogProvider.overrideWith(
+            (ref) async => const DiscoveryCatalog(
+              genres: [DiscoveryGenre(id: '0', name: 'All')],
+              region: 'us',
+              sourceName: 'Apple Music',
+            ),
+          ),
+          discoveryFeedProvider.overrideWith(
+            (ref, query) async => DiscoveryFeed(
+              entries: const [],
+              fetchedAt: DateTime(2026),
+              region: 'us',
+              sourceName: 'Apple Music',
+            ),
+          ),
           settingsProvider.overrideWith(_Settings.new),
           extensionProvider.overrideWith(_Extensions.new),
           exploreProvider.overrideWith(_Explore.new),
@@ -118,6 +137,57 @@ void main() {
     );
     await tester.pump();
     await settle(tester);
+  }
+
+  for (final desktop in [false, true]) {
+    for (final mornye in [false, true]) {
+      testWidgets(
+        'Discovery is a persistent root destination (desktop=$desktop, mornye=$mornye)',
+        (tester) async {
+          await pumpShell(tester, desktop: desktop, mornye: mornye);
+          final l10n = AppLocalizations.of(
+            tester.element(find.byType(MainShell)),
+          );
+          final destination = find.text(
+            desktop ? l10n.discoveryTitle : l10n.discoveryNewReleases,
+          );
+          expect(destination, findsOneWidget);
+          await tester.tap(destination);
+          await settle(tester);
+          expect(find.byType(DiscoveryScreen), findsOneWidget);
+          expect(
+            ShellNavigationService.currentTabForTesting,
+            ShellTab.discovery,
+          );
+          expect(
+            ShellNavigationService.activeTabNavigator(),
+            same(ShellNavigationService.discoveryTabNavigatorKey.currentState),
+          );
+          expect(
+            ShellNavigationService.activeTabNavigator()!.canPop(),
+            isFalse,
+          );
+          expect(find.byType(BackButton), findsNothing);
+          await tester.tap(find.text(l10n.discoveryTrends));
+          await settle(tester);
+          final discoveryState = tester.state(find.byType(DiscoveryScreen));
+          ShellNavigationService.requestTab(ShellTab.library);
+          await settle(tester);
+          expect(find.byType(QueueTab), findsOneWidget);
+          expect(ShellNavigationService.navigateBack(), isTrue);
+          await settle(tester);
+          expect(
+            tester.state(find.byType(DiscoveryScreen)),
+            same(discoveryState),
+          );
+          final segments = tester.widget<SegmentedButton<DiscoveryKind>>(
+            find.byType(SegmentedButton<DiscoveryKind>),
+          );
+          expect(segments.selected, {DiscoveryKind.trends});
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
 
   /// Opens Library, pushes a probe page there and returns to Home, so the
@@ -284,8 +354,11 @@ class _ProbePage extends StatelessWidget {
 
 class _Settings extends SettingsNotifier {
   @override
-  AppSettings build() =>
-      const AppSettings(searchProvider: 'example', hasSearchedBefore: true);
+  AppSettings build() => const AppSettings(
+    searchProvider: 'example',
+    hasSearchedBefore: true,
+    whatsNewSeen: AppInfo.whatsNewRelease,
+  );
 }
 
 class _Extensions extends ExtensionNotifier {

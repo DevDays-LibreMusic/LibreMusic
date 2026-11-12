@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "id": "amazon-direct",
+      "name": "amazon-direct",
+      "display_name": "Amazon Music Direct",
+      "version": "0.1.0",
+      "description": "Amazon Music Direct: каталог, поиск и ссылки напрямую. Скачивание DRM-аудио не поддерживается.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/amazon-direct.sflx",
+      "sha256": "d75fdef63fc157fdfb2fb1e85cca195398d3b48ead495672d34fefdb74525d91",
+      "min_app_version": "4.9.1",
+      "runtime": "javascript",
+      "category": "integration",
+      "tags": [
+        "metadata_provider"
+      ]
+    },
+    {
+      "id": "beatport-direct",
+      "name": "beatport-direct",
+      "display_name": "Beatport Direct",
+      "version": "0.1.0",
+      "description": "Beatport напрямую через свой аккаунт, без внешнего resolver. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/beatport-direct.sflx",
+      "sha256": "728d2836533dda99d0950c12eb99b2c9d2dfaf5a0fb3569a7963b42513c16243",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "deezer-direct",
+      "name": "deezer-direct",
+      "display_name": "Deezer Direct",
+      "version": "0.1.0",
+      "description": "Прямой доступ к Deezer через ARL своего аккаунта: поиск, ссылки, коллекции, MP3 и FLAC. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/deezer-direct.sflx",
+      "sha256": "de5bcf287e4e9f157448e26b8c9ad3da7129f910d2bf3833e62fc611fdb2b743",
+      "min_app_version": "4.9.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "kion-music",
+      "name": "kion-music",
+      "display_name": "КИОН Музыка",
+      "version": "0.1.0",
+      "description": "Поиск, ссылки, альбомы, плейлисты и загрузка доступного аккаунту аудио. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/kion-music.sflx",
+      "sha256": "f8c490644b036e2755bbee3e62fc236a8b98a598857109191a6e2626f6191880",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "qobuz-direct",
+      "name": "qobuz-direct",
+      "display_name": "Qobuz Direct",
+      "version": "0.1.0",
+      "description": "Qobuz напрямую через свой аккаунт, без внешнего resolver. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/qobuz-direct.sflx",
+      "sha256": "f0810c62f3d97b6ec4a370e6dd958484a2f8752735927124f484a35cf9fc59cc",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "tidal-direct",
+      "name": "tidal-direct",
+      "display_name": "Tidal Direct",
+      "version": "0.1.0",
+      "description": "Tidal напрямую через свой аккаунт, без внешнего resolver. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/tidal-direct.sflx",
+      "sha256": "fda1d673959bcc55d6f96f65c52dfe1a47f96ca71129daaed1b94f424fab40eb",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "vk-music",
+      "name": "vk-music",
+      "display_name": "VK Музыка",
+      "version": "0.1.0",
+      "description": "Поиск, ссылки, альбомы, плейлисты и загрузка доступного аккаунту аудио. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/vk-music.sflx",
+      "sha256": "5109523c95731acdec365faa027ae0476cf9acb81579d5255f323b0e416cc0c2",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "yandex-music",
+      "name": "yandex-music",
+      "display_name": "Яндекс Музыка",
+      "version": "0.1.1",
+      "description": "Поиск, ссылки, альбомы, плейлисты и полные MP3, доступные вашему аккаунту Яндекс Музыки.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/yandex-music.sflx",
+      "sha256": "59bec9b2bce1b38bbfebe89bd25072d16afc9be3dec3089a1fd41c16726ee6f5",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "ytmusic-direct",
+      "name": "ytmusic-direct",
+      "display_name": "YouTube Music Direct",
+      "version": "0.1.0",
+      "description": "YouTube Music Direct: прямой InnerTube без Cobalt и сторонних загрузчиков. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/ytmusic-direct.sflx",
+      "sha256": "32d9b47e2dfd34017ffccc2c97954150fee8483670edc126beaca95c5f03ee10",
+      "min_app_version": "4.5.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    },
+    {
+      "id": "zvuk",
+      "name": "zvuk",
+      "display_name": "Звук",
+      "version": "0.1.0",
+      "description": "Поиск, ссылки, альбомы, плейлисты и загрузка доступного аккаунту аудио. Экспериментальная версия.",
+      "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/zvuk.sflx",
+      "sha256": "056b8e3613c8e8514673e6856a70fcca74670f4c0061c2d3547159a3460cf15e",
+      "min_app_version": "5.3.1",
+      "runtime": "javascript",
+      "category": "download",
+      "tags": [
+        "metadata_provider",
+        "download_provider"
+      ]
+    }
+  ]
+}

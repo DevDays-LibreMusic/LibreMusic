@@ -9,15 +9,9 @@ from pathlib import Path
 import zipfile
 
 
-def main():
-    source = Path(__file__).resolve().parent
+def package(source=None):
+    source = source or Path(__file__).resolve().parent
     root = source.parent.parent
-    manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=root / ".tmp" / (
-        "yandex-music-" + manifest["version"] + ".sflx"))
-    parser.add_argument("--check", action="store_true", help="Compare an existing package with source")
-    args = parser.parse_args()
     files = {name: source / name for name in ("manifest.json", "index.js", "README.md")}
     files.update({name: root / name for name in ("LICENSE", "COPYING", "NOTICE")})
     buffer = io.BytesIO()
@@ -29,6 +23,19 @@ def main():
             info.compress_type = zipfile.ZIP_DEFLATED
             archive.writestr(info, path.read_bytes())
     data = buffer.getvalue()
+    return data
+
+
+def main():
+    source = Path(__file__).resolve().parent
+    root = source.parent.parent
+    manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=root / ".tmp" / (
+        "yandex-music-" + manifest["version"] + ".sflx"))
+    parser.add_argument("--check", action="store_true", help="Compare an existing package with source")
+    args = parser.parse_args()
+    data = package(source)
     if args.check:
         if not args.output.is_file() or args.output.read_bytes() != data:
             parser.exit(1, "Package is missing or differs from source. Run build.py first.\n")

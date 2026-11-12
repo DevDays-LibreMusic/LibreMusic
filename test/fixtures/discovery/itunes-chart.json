@@ -1,0 +1,363 @@
+{
+  "feed": {
+    "entry": [
+      {
+        "im:name": {
+          "label": "Choosin' Texas"
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/e2/91/4d/e2914d0a-7f1d-f04c-fbf4-c50b38548838/196873638690.jpg/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/e2/91/4d/e2914d0a-7f1d-f04c-fbf4-c50b38548838/196873638690.jpg/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/e2/91/4d/e2914d0a-7f1d-f04c-fbf4-c50b38548838/196873638690.jpg/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:collection": {
+          "im:name": {
+            "label": "Choosin' Texas - Single"
+          },
+          "link": {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/choosin-texas-single/1844932149?uo=2"
+            }
+          },
+          "im:contentType": {
+            "im:contentType": {
+              "attributes": {
+                "term": "Album",
+                "label": "Album"
+              }
+            },
+            "attributes": {
+              "term": "Music",
+              "label": "Music"
+            }
+          }
+        },
+        "im:price": {
+          "label": "$0.69",
+          "attributes": {
+            "amount": "0.69",
+            "currency": "USD"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Track",
+              "label": "Track"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "rights": {
+          "label": "℗ 2025 SAWGOD Records/Columbia"
+        },
+        "title": {
+          "label": "Choosin' Texas - Ella Langley"
+        },
+        "link": [
+          {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/choosin-texas/1844932149?i=1844932150&uo=2"
+            }
+          },
+          {
+            "im:duration": {
+              "label": "30000"
+            },
+            "attributes": {
+              "title": "Preview",
+              "rel": "enclosure",
+              "type": "audio/x-m4a",
+              "href": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/38/49/4c/38494cb4-f9e0-1db4-0b84-8c478cb55390/mzaf_4251933786704889664.plus.aac.p.m4a",
+              "im:assetType": "preview"
+            }
+          }
+        ],
+        "id": {
+          "label": "https://music.apple.com/us/album/choosin-texas/1844932149?i=1844932150&uo=2",
+          "attributes": {
+            "im:id": "1844932150"
+          }
+        },
+        "im:artist": {
+          "label": "Ella Langley",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/ella-langley/1384373733?uo=2"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "6",
+            "term": "Country",
+            "scheme": "https://music.apple.com/us/genre/music-country/id6?uo=2",
+            "label": "Country"
+          }
+        },
+        "im:releaseDate": {
+          "label": "2025-10-17T05:00:00-07:00",
+          "attributes": {
+            "label": "October 17, 2025"
+          }
+        }
+      },
+      {
+        "im:name": {
+          "label": "The Wreck of the Edmund Fitzgerald"
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/bc/1c/0d/bc1c0d65-5891-ff28-d8b3-4c5d252a43c7/mzi.mgfctwir.jpg/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/bc/1c/0d/bc1c0d65-5891-ff28-d8b3-4c5d252a43c7/mzi.mgfctwir.jpg/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/bc/1c/0d/bc1c0d65-5891-ff28-d8b3-4c5d252a43c7/mzi.mgfctwir.jpg/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:collection": {
+          "im:name": {
+            "label": "Summertime Dream"
+          },
+          "link": {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/summertime-dream/321976430?uo=2"
+            }
+          },
+          "im:contentType": {
+            "im:contentType": {
+              "attributes": {
+                "term": "Album",
+                "label": "Album"
+              }
+            },
+            "attributes": {
+              "term": "Music",
+              "label": "Music"
+            }
+          }
+        },
+        "im:price": {
+          "label": "$1.29",
+          "attributes": {
+            "amount": "1.29",
+            "currency": "USD"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Track",
+              "label": "Track"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "rights": {
+          "label": "℗ 1976 Reprise Records, a division of Warner Records Inc. Marketed by Rhino Entertainment Company, a Warner Music Group Company."
+        },
+        "title": {
+          "label": "The Wreck of the Edmund Fitzgerald - Gordon Lightfoot"
+        },
+        "link": [
+          {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/the-wreck-of-the-edmund-fitzgerald/321976430?i=321976504&uo=2"
+            }
+          },
+          {
+            "im:duration": {
+              "label": "30000"
+            },
+            "attributes": {
+              "title": "Preview",
+              "rel": "enclosure",
+              "type": "audio/x-m4a",
+              "href": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d8/6a/74/d86a7440-b930-78bd-6ae7-25f4d5d5fc31/mzaf_4450902700182112121.plus.aac.p.m4a",
+              "im:assetType": "preview"
+            }
+          }
+        ],
+        "id": {
+          "label": "https://music.apple.com/us/album/the-wreck-of-the-edmund-fitzgerald/321976430?i=321976504&uo=2",
+          "attributes": {
+            "im:id": "321976504"
+          }
+        },
+        "im:artist": {
+          "label": "Gordon Lightfoot",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/gordon-lightfoot/158301?uo=2"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "10",
+            "term": "Singer/Songwriter",
+            "scheme": "https://music.apple.com/us/genre/music-singer-songwriter/id10?uo=2",
+            "label": "Singer/Songwriter"
+          }
+        },
+        "im:releaseDate": {
+          "label": "1976-06-01T00:00:00-07:00",
+          "attributes": {
+            "label": "June 1, 1976"
+          }
+        }
+      },
+      {
+        "im:name": {
+          "label": "I Don't Trust Tomorrow"
+        },
+        "rights": {
+          "label": "℗ 2027 Spinefarm Music Group"
+        },
+        "im:price": {
+          "label": "$1.29",
+          "attributes": {
+            "amount": "1.29",
+            "currency": "USD"
+          }
+        },
+        "im:collection": {
+          "im:name": {
+            "label": "Social Apocalypse"
+          },
+          "link": {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/social-apocalypse/6810209759?uo=2"
+            }
+          },
+          "im:contentType": {
+            "im:contentType": {
+              "attributes": {
+                "term": "Album",
+                "label": "Album"
+              }
+            },
+            "attributes": {
+              "term": "Music",
+              "label": "Music"
+            }
+          }
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/27/fd/a027fd8e-9ffe-d827-086f-c85575648b64/5401148012606_cover.jpg/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/27/fd/a027fd8e-9ffe-d827-086f-c85575648b64/5401148012606_cover.jpg/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a0/27/fd/a027fd8e-9ffe-d827-086f-c85575648b64/5401148012606_cover.jpg/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:artist": {
+          "label": "Bullet for My Valentine, Will Ramos & Lorna Shore",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/bullet-for-my-valentine/50077521?uo=2"
+          }
+        },
+        "title": {
+          "label": "I Don't Trust Tomorrow - Bullet for My Valentine, Will Ramos & Lorna Shore"
+        },
+        "link": [
+          {
+            "attributes": {
+              "rel": "alternate",
+              "type": "text/html",
+              "href": "https://music.apple.com/us/album/i-dont-trust-tomorrow/6810209759?i=6810210090&uo=2"
+            }
+          },
+          {
+            "im:duration": {
+              "label": "30000"
+            },
+            "attributes": {
+              "title": "Preview",
+              "rel": "enclosure",
+              "type": "audio/x-m4a",
+              "href": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e0/9c/e3/e09ce312-f234-3791-1ce1-2810105d0981/mzaf_3143130408790381665.plus.aac.p.m4a",
+              "im:assetType": "preview"
+            }
+          }
+        ],
+        "id": {
+          "label": "https://music.apple.com/us/album/i-dont-trust-tomorrow/6810209759?i=6810210090&uo=2",
+          "attributes": {
+            "im:id": "6810210090"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Track",
+              "label": "Track"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "1153",
+            "term": "Heavy Metal",
+            "scheme": "https://music.apple.com/us/genre/music-rock-metal/id1153?uo=2",
+            "label": "Metal"
+          }
+        }
+      }
+    ]
+  }
+}
