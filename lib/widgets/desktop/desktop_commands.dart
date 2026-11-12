@@ -152,6 +152,7 @@ const _destinationKeys = [
   LogicalKeyboardKey.digit3,
   LogicalKeyboardKey.digit4,
   LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
 ];
 
 /// Includes the native menu shortcut and any additional keyboard bindings.
@@ -254,7 +255,7 @@ String desktopDestinationTooltip(
   );
 }
 
-/// Desktop destinations in rail or sidebar order. Cmd/Ctrl+1..5 select them
+/// Desktop destinations in rail or sidebar order. Cmd/Ctrl+1..6 select them
 /// by position. Mornye reaches Search from the sidebar search field.
 List<ShellTab> desktopDestinationTabs({
   required bool mornye,
@@ -263,6 +264,7 @@ List<ShellTab> desktopDestinationTabs({
   ShellTab.home,
   ShellTab.library,
   if (showStore) ShellTab.repository,
+  ShellTab.discovery,
   if (mornye) ShellTab.search,
   ShellTab.settings,
 ];
