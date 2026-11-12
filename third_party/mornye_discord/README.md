@@ -14,12 +14,14 @@ bash scripts/setup_discord_sdk.sh /path/to/discord_social_sdk
 flutter pub get
 ```
 
-CI prepares the pinned mobile SDK with `.github/actions/discord-sdk` before
-building. Its AES-256 encrypted payload contains only the Android AAR, iOS
-XCFramework, C++ header and license notices from the official download. Set the
+When the optional SDK key is configured, CI prepares the pinned mobile SDK
+with `.github/actions/discord-sdk` before building. Its AES-256 encrypted
+payload contains only the Android AAR, iOS XCFramework, C++ header and license
+notices from the official download. Set the
 Actions repository secret `DISCORD_MOBILE_SDK_PASSPHRASE` to the payload's key.
 The helper verifies SHA-256 checksums for all 16 required files before staging
-them. A missing key, failed decryption or changed SDK stops the build.
+them. Ordinary CI uses the Lite build when the key is absent. If a key is
+configured, failed decryption or a changed SDK still stops the build.
 
 Decrypted vendor binaries and notices stay under the ignored `.dart_tool/`,
 `sdk/` and `ios/Frameworks/` directories. Do not commit the encryption key,
@@ -40,9 +42,11 @@ as unavailable; the staged SDK files are retained for subsequent full builds.
 Production Android builds use `bash scripts/build_android.sh --production`,
 which forces Discord on, checks the staged SDK and audits it in every APK ABI.
 `--production --lite` is rejected. Release CI requires the SDK on both platforms
-and stops before publication if the SDK is absent. CI on trusted branches also
-builds with Discord; fork PRs run native/debug checks and explicit Lite builds
-without receiving the decryption key.
+and stops before publication if the SDK is absent. Ordinary CI on trusted
+branches builds with Discord only when the key is configured; otherwise it runs
+the native/debug checks and Lite builds without Discord. Fork PRs always use
+Lite without receiving the decryption key. The same tests and non-Discord
+artifact audits run in both modes.
 
 Android uses the installed Discord app's signed-in session (Social SDK 1.10+).
 The AAR and CMake use the same staged native library; the host packages one copy
