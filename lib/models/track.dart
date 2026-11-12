@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mornye/models/track_censorship.dart';
 import 'package:mornye/utils/int_utils.dart';
 import 'package:mornye/utils/string_utils.dart';
 
@@ -35,6 +36,8 @@ class Track {
   final String? itemType;
   final String? audioQuality;
   final String? audioModes;
+
+  /// True is explicit, false is confirmed non-explicit, null is unknown.
   final bool? explicit;
   final String? upc;
 
@@ -230,7 +233,10 @@ class Track {
   bool get isDolbyAtmos =>
       audioModes != null && audioModes!.contains('DOLBY_ATMOS');
 
-  bool get isExplicit => explicit == true;
+  TrackCensorship get censorship =>
+      censorshipFor(explicit: explicit, title: name);
+
+  bool get isExplicit => censorship == TrackCensorship.explicit;
 
   bool get hasPreview => previewUrl != null && previewUrl!.isNotEmpty;
 }

@@ -115,14 +115,17 @@ class _Wave extends WaveSessionController {
     required super.service,
     required super.prepareAudio,
     required super.libraryLoader,
+    Future<Track?> Function(LastfmWaveTrack)? resolver,
   }) : super(
-         resolveCandidate: (candidate) async => Track(
-           id: candidate.title,
-           name: candidate.title,
-           artistName: candidate.artist,
-           albumName: 'Album',
-           duration: 180,
-         ),
+         resolveCandidate:
+             resolver ??
+             (candidate) async => Track(
+               id: candidate.title,
+               name: candidate.title,
+               artistName: candidate.artist,
+               albumName: 'Album',
+               duration: 180,
+             ),
        );
   @override
   Future<void> ensureLoaded() async {}
@@ -165,6 +168,7 @@ void main() {
   harness(
     Future<PlayableMedia?> Function(Track) prepare, {
     Future<List<PlayableMedia>> Function(PlayableMedia)? libraryLoader,
+    Future<Track?> Function(LastfmWaveTrack)? resolveCandidate,
   }) async {
     final handler = _Handler();
     final service = LastfmWaveService(
@@ -219,6 +223,7 @@ void main() {
             service: service,
             prepareAudio: prepare,
             libraryLoader: libraryLoader ?? (_) async => [],
+            resolver: resolveCandidate,
           ),
         ),
       ],
@@ -499,6 +504,99 @@ void main() {
       expect(h.handler.mediaItem.value!.id, b.id);
     },
   );
+  for (final explicitAvailable in [true, false]) {
+    test(
+      'selected clean seed uses uncensored alternative when available ($explicitAvailable)',
+      () async {
+        const selected = Track(
+          id: 'clean',
+          name: 'Song (Clean)',
+          artistName: 'Artist',
+          albumName: 'Album',
+          duration: 180,
+          explicit: false,
+        );
+        const explicit = Track(
+          id: 'explicit',
+          name: 'Song (Explicit)',
+          artistName: 'Artist',
+          albumName: 'Album',
+          duration: 180,
+          explicit: true,
+        );
+        var lookups = 0;
+        final h = await harness(
+          (track) async => media(track),
+          resolveCandidate: (candidate) async {
+            lookups++;
+            return explicitAvailable ? explicit : null;
+          },
+        );
+        await h.wave.start(
+          const WaveContext(
+            kind: WaveKind.track,
+            title: 'Song',
+            track: selected,
+          ),
+        );
+        expect(lookups, 1);
+        expect(
+          h.handler.mediaItem.value?.id,
+          explicitAvailable ? 'explicit' : 'clean',
+        );
+      },
+    );
+  }
+
+  for (final outcome in [
+    'unknown',
+    'offline',
+    'unplayable',
+    'download-error',
+  ]) {
+    test('selected non-explicit seed survives $outcome alternative', () async {
+      const selected = Track(
+        id: 'selected',
+        name: 'Song (Clean)',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 180,
+        explicit: false,
+      );
+      const explicit = Track(
+        id: 'explicit',
+        name: 'Song',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 180,
+        explicit: true,
+      );
+      const unknown = Track(
+        id: 'unknown',
+        name: 'Song',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 180,
+      );
+      final h = await harness(
+        (track) async {
+          if (track.id == 'explicit' && outcome == 'download-error') {
+            throw Exception('download failed');
+          }
+          return track.id == 'explicit' ? null : media(track);
+        },
+        resolveCandidate: (_) async {
+          if (outcome == 'offline') throw Exception('offline');
+          return outcome == 'unknown' ? unknown : explicit;
+        },
+      );
+      await h.wave.start(
+        const WaveContext(kind: WaveKind.track, title: 'Song', track: selected),
+      );
+      expect(h.handler.mediaItem.value?.id, 'selected');
+    });
+  }
+
   test(
     'current item action preserves paused local source and position without catalog tags',
     () async {

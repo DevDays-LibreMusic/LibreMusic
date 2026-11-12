@@ -112,6 +112,7 @@ fn search_value_routes_preserve_public_json_dedup_limits_and_cancellation() {
     .unwrap();
     assert_eq!(custom.as_array().unwrap().len(), 3);
     assert_eq!(custom[0]["name"], "First");
+    assert!(custom[0]["explicit"].is_null());
     assert_eq!(
         backend.custom_search_json(ID, "null", "{}", None).unwrap(),
         "[]"
@@ -250,6 +251,9 @@ fn response_envelopes_preserve_json_and_cancellation() {
     assert_eq!(playlist["playlist_info"]["owner"]["name"], "Artist Café");
     assert_eq!(playlist["track_list"][0]["track_number"], 1);
     assert_eq!(playlist["track_list"][1]["track_number"], 9);
+    assert!(actual["track_list"][0]["explicit"].is_null());
+    assert_eq!(actual["track_list"][1]["explicit"], true);
+    assert_eq!(track(&json!({"explicit": false}), "", 0)["explicit"], false);
     assert_eq!(
         response("track", &value, &check).unwrap().to_string(),
         json!({"track": track(&value, "", 0)}).to_string(),

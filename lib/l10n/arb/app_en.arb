@@ -2021,6 +2021,14 @@
   "@sectionService": {
     "description": "Settings section header"
   },
+  "downloadPreferExplicitTracks": "Prefer uncensored versions",
+  "@downloadPreferExplicitTracks": {
+    "description": "Setting - prefer uncensored recordings"
+  },
+  "downloadPreferExplicitTracksSubtitle": "Search and waves prioritize uncensored (explicit) versions over audio quality. Turn off to prefer quality.",
+  "@downloadPreferExplicitTracksSubtitle": {
+    "description": "Setting - uncensored versus quality priority"
+  },
   "sectionAudioQuality": "Audio Quality",
   "@sectionAudioQuality": {
     "description": "Settings section header"

@@ -119,6 +119,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   searchProvider: json['searchProvider'] as String?,
   defaultSearchTab: json['defaultSearchTab'] as String? ?? 'all',
   searchViewMode: json['searchViewMode'] as String? ?? 'list',
+  preferExplicitTracks: json['preferExplicitTracks'] as bool? ?? true,
   homeFeedProvider: json['homeFeedProvider'] as String?,
   separateSingles: json['separateSingles'] as bool? ?? false,
   singleFilenameFormat:
@@ -268,6 +269,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'searchProvider': instance.searchProvider,
   'defaultSearchTab': instance.defaultSearchTab,
   'searchViewMode': instance.searchViewMode,
+  'preferExplicitTracks': instance.preferExplicitTracks,
   'homeFeedProvider': instance.homeFeedProvider,
   'separateSingles': instance.separateSingles,
   'singleFilenameFormat': instance.singleFilenameFormat,

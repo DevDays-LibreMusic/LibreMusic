@@ -175,6 +175,9 @@ class AppSettings {
   /// Search results on wide screens: 'list' keeps the phone rows, 'grid'
   /// shows cover grids and shelves.
   final String searchViewMode;
+
+  /// Search and waves prefer uncensored recordings over audio quality.
+  final bool preferExplicitTracks;
   final String? homeFeedProvider;
   final bool separateSingles;
   final String singleFilenameFormat;
@@ -355,6 +358,7 @@ class AppSettings {
     this.searchProvider,
     this.defaultSearchTab = 'all',
     this.searchViewMode = 'list',
+    this.preferExplicitTracks = true,
     this.homeFeedProvider,
     this.separateSingles = false,
     this.singleFilenameFormat = '{title} - {artist}',
@@ -511,6 +515,7 @@ class AppSettings {
     bool clearSearchProvider = false,
     String? defaultSearchTab,
     String? searchViewMode,
+    bool? preferExplicitTracks,
     String? homeFeedProvider,
     bool clearHomeFeedProvider = false,
     bool? separateSingles,
@@ -666,6 +671,7 @@ class AppSettings {
           : (searchProvider ?? this.searchProvider),
       defaultSearchTab: defaultSearchTab ?? this.defaultSearchTab,
       searchViewMode: searchViewMode ?? this.searchViewMode,
+      preferExplicitTracks: preferExplicitTracks ?? this.preferExplicitTracks,
       homeFeedProvider: clearHomeFeedProvider
           ? null
           : (homeFeedProvider ?? this.homeFeedProvider),

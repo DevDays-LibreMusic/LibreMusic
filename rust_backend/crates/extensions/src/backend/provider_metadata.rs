@@ -386,7 +386,7 @@ fn track(value: &Value, cover: &str, index: usize) -> Value {
     }
     result.insert(
         "explicit".into(),
-        json!(value["explicit"].as_bool().unwrap_or(false)),
+        value.get("explicit").cloned().unwrap_or(Value::Null),
     );
     result.insert("external_links".into(), value["external_links"].clone());
     result.into()

@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mornye/controllers/home_search_logic.dart';
 import 'package:mornye/controllers/extension_auth_launcher.dart';
 import 'package:mornye/models/track.dart';
+import 'package:mornye/models/track_censorship.dart';
 import 'package:mornye/models/download_result.dart';
 import 'package:mornye/models/wave_session.dart';
 import 'package:mornye/providers/extension_provider.dart';
@@ -57,6 +58,7 @@ class WaveSessionController extends Notifier<WaveSessionState> {
   final _likes = <String>{};
   final _skips = <String, int>{};
   final _resolved = <String, Track>{};
+  final _lookupResolved = <String, ({Track track, bool preferExplicit})>{};
   final _modes = <String, WaveMode>{};
   final _metadataCache =
       <String, ({DateTime at, List<LastfmWaveTrack> tracks})>{};
@@ -495,12 +497,43 @@ class WaveSessionController extends Notifier<WaveSessionState> {
     );
     try {
       PlayableMedia? first;
+      Track? resolvedSelected = selected;
       if (!skipSeed &&
           !preserveCurrent &&
           selected != null &&
           context.kind == WaveKind.track) {
-        first = await _prepareTrack(selected, foreground: true);
+        if (ref.read(settingsProvider).preferExplicitTracks &&
+            selected.censorship == TrackCensorship.clean) {
+          try {
+            resolvedSelected = await _resolve(
+              LastfmWaveTrack(
+                title: selected.name,
+                artist: selected.artistName,
+              ),
+              foreground: true,
+            );
+            // Missing metadata is not evidence of an uncensored alternative.
+            if (resolvedSelected?.censorship != TrackCensorship.explicit) {
+              resolvedSelected = selected;
+            }
+          } on Exception {
+            resolvedSelected = selected;
+          }
+          if (!current()) return;
+        }
+        resolvedSelected ??= selected;
+        try {
+          first = await _prepareTrack(resolvedSelected, foreground: true);
+        } on Exception {
+          if (identical(resolvedSelected, selected)) rethrow;
+          first = null;
+        }
         if (!current()) return;
+        if (first == null && !identical(resolvedSelected, selected)) {
+          resolvedSelected = selected;
+          first = await _prepareTrack(selected, foreground: true);
+          if (!current()) return;
+        }
         if (first == null) {
           _failedSeedContext = context;
           state = state.copyWith(seedUnavailable: true);
@@ -556,7 +589,7 @@ class WaveSessionController extends Notifier<WaveSessionState> {
             first.withWaveSession(
               state.context.key,
               track:
-                  selected ??
+                  resolvedSelected ??
                   _resolved[waveTrackKey(first.artist, first.title)],
             ),
           ],
@@ -864,47 +897,81 @@ class WaveSessionController extends Notifier<WaveSessionState> {
     required bool foreground,
   }) async {
     if (_resolveCandidate != null) return _resolveCandidate(candidate);
-    if (_resolved[candidate.key] case final known?) return known;
+    final settings = ref.read(settingsProvider);
+    final preferExplicit = settings.preferExplicitTracks;
+    if (_lookupResolved[candidate.key] case final known?) {
+      if (known.preferExplicit == preferExplicit) return known.track;
+    }
+    Track? localFallback;
     final local = _heard[candidate.key];
     if (local != null &&
         (await ref.read(playbackProvider.notifier).resolveTrackFilePaths([
               local,
             ], strictRecording: true)).single !=
             null) {
-      return local;
+      if (!preferExplicit || local.censorship != TrackCensorship.clean) {
+        return local;
+      }
+      localFallback = local;
     }
-    final settings = ref.read(settingsProvider);
     final extensions = ref.read(extensionProvider).extensions;
     final source = HomeSearchProviderPolicy.resolveProvider(
       settings.searchProvider,
       extensions,
     );
-    if (source == null || source.isEmpty) return null;
-    final found = await searchWaveCandidates(candidate, (query) async {
-      Future<List<Map<String, dynamic>>> request() =>
-          PlatformBridge.customSearchWithExtension(
-            source,
-            query,
-            options: {'filter': 'track'},
-          ).timeout(const Duration(seconds: 15));
-      List<Map<String, dynamic>> rows;
-      try {
-        rows = await request();
-      } catch (error) {
-        if (!isExtensionVerificationRequired(error)) rethrow;
-        if (!foreground) throw const WaveVerificationRequired();
-        if (!await openVerificationAndAwaitGrant(
-          source,
-          browserMode: settings.extensionVerificationBrowserMode,
-        )) {
-          throw const WaveVerificationRequired();
-        }
-        rows = await request();
-      }
-      return rows.map((r) => Track.fromBackendMap(r, source: source)).toList();
-    });
-    final match = matchWaveTrack(candidate, found);
-    if (match != null) _resolved[candidate.key] = match;
+    if (source == null || source.isEmpty) return localFallback;
+    final List<Track> found;
+    try {
+      found = await searchWaveCandidates(
+        candidate,
+        preferExplicit: preferExplicit,
+        (query) async {
+          Future<List<Map<String, dynamic>>> request() =>
+              PlatformBridge.customSearchWithExtension(
+                source,
+                query,
+                options: {'filter': 'track'},
+              ).timeout(const Duration(seconds: 15));
+          List<Map<String, dynamic>> rows;
+          try {
+            rows = await request();
+          } catch (error) {
+            if (!isExtensionVerificationRequired(error)) rethrow;
+            if (!foreground) throw const WaveVerificationRequired();
+            if (!await openVerificationAndAwaitGrant(
+              source,
+              browserMode: settings.extensionVerificationBrowserMode,
+            )) {
+              throw const WaveVerificationRequired();
+            }
+            rows = await request();
+          }
+          return rows
+              .map((r) => Track.fromBackendMap(r, source: source))
+              .toList();
+        },
+      );
+    } on Object {
+      if (localFallback != null) return localFallback;
+      rethrow;
+    }
+    final foundMatch = matchWaveTrack(
+      candidate,
+      found,
+      preferExplicit: preferExplicit,
+    );
+    final match =
+        localFallback != null &&
+            foundMatch?.censorship != TrackCensorship.explicit
+        ? localFallback
+        : foundMatch ?? localFallback;
+    if (match != null) {
+      _resolved[candidate.key] = match;
+      _lookupResolved[candidate.key] = (
+        track: match,
+        preferExplicit: preferExplicit,
+      );
+    }
     return match;
   }
 

@@ -1,0 +1,45 @@
+{
+  "retrieved_at_utc": "2026-11-12T13:18:49.426656+00:00",
+  "provenance": "Public Deezer track API; no authentication. Only identity and advisory metadata retained. Non-explicit does not prove a censored edit.",
+  "responses": [
+    {
+      "url": "https://api.deezer.com/track/1976903157",
+      "track": {
+        "id": 1976903157,
+        "title": "Anti-Hero",
+        "artist": {
+          "id": 12246,
+          "name": "Taylor Swift"
+        },
+        "explicit_lyrics": false,
+        "explicit_content_lyrics": 0
+      }
+    },
+    {
+      "url": "https://api.deezer.com/track/2006112637",
+      "track": {
+        "id": 2006112637,
+        "title": "Anti-Hero",
+        "artist": {
+          "id": 12246,
+          "name": "Taylor Swift"
+        },
+        "explicit_lyrics": true,
+        "explicit_content_lyrics": 1
+      }
+    },
+    {
+      "url": "https://api.deezer.com/track/1109731",
+      "track": {
+        "id": 1109731,
+        "title": "Lose Yourself",
+        "artist": {
+          "id": 13,
+          "name": "Eminem"
+        },
+        "explicit_lyrics": true,
+        "explicit_content_lyrics": 1
+      }
+    }
+  ]
+}

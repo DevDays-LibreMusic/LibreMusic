@@ -81,6 +81,29 @@ void main() {
       expect(result, isEmpty);
     },
   );
+  test(
+    'fallback failure retains an already found non-explicit recording',
+    () async {
+      const requested = LastfmWaveTrack(title: 'Song', artist: 'Artist');
+      const clean = Track(
+        id: 'clean',
+        name: 'Song',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 200,
+        explicit: false,
+      );
+      var calls = 0;
+      final result = await searchWaveCandidates(requested, (_) async {
+        calls++;
+        if (calls == 2) throw const SocketException('offline');
+        return [clean];
+      });
+      expect(calls, 2);
+      expect(result, [clean]);
+    },
+  );
+
   test('provider failure does not trigger a fallback request', () async {
     var calls = 0;
     await expectLater(
@@ -134,6 +157,174 @@ void main() {
       isNull,
     );
   });
+
+  test(
+    'uncensored version wins over clean quality and stays a single match',
+    () {
+      const explicit = Track(
+        id: 'explicit',
+        name: 'Get Lucky (Explicit)',
+        artistName: 'Daft Punk',
+        albumName: '',
+        duration: 248,
+        explicit: true,
+        audioQuality: 'LOW',
+      );
+      const clean = Track(
+        id: 'clean',
+        name: 'Get Lucky (Clean)',
+        artistName: 'Daft Punk',
+        albumName: '',
+        duration: 248,
+        explicit: false,
+        audioQuality: 'LOSSLESS',
+      );
+      expect(matchWaveTrack(recommendation, [explicit, clean]), same(explicit));
+      expect(
+        matchWaveTrack(recommendation, [
+          clean,
+          explicit,
+        ], preferExplicit: false),
+        same(clean),
+      );
+    },
+  );
+
+  test('unknown is not clean, and clean variants reject other recordings', () {
+    const unknown = Track(
+      id: 'unknown',
+      name: 'Get Lucky',
+      artistName: 'Daft Punk',
+      albumName: '',
+      duration: 248,
+    );
+    const explicit = Track(
+      id: 'explicit',
+      name: 'Get Lucky',
+      artistName: 'Daft Punk',
+      albumName: '',
+      duration: 248,
+      explicit: true,
+    );
+    expect(matchWaveTrack(recommendation, [explicit, unknown]), same(explicit));
+    for (final name in [
+      'Get Lucky (Live)',
+      'Get Lucky (Remix)',
+      'Get Lucky (Cover)',
+      'Get Lucky (Karaoke)',
+    ]) {
+      expect(
+        matchWaveTrack(recommendation, [
+          Track(
+            id: name,
+            name: name,
+            artistName: 'Daft Punk',
+            albumName: '',
+            duration: 248,
+            explicit: false,
+          ),
+        ]),
+        isNull,
+      );
+    }
+  });
+
+  test(
+    'non-explicit match triggers one bounded fallback before using original',
+    () async {
+      const requested = LastfmWaveTrack(title: 'Song', artist: 'Artist');
+      const explicit = Track(
+        id: 'explicit',
+        name: 'Song',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 200,
+        explicit: true,
+      );
+      const clean = Track(
+        id: 'clean',
+        name: 'Song (Edited)',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 200,
+        explicit: false,
+      );
+      var calls = 0;
+      final result = await searchWaveCandidates(requested, (_) async {
+        calls++;
+        return calls == 1 ? [clean] : [explicit, clean];
+      });
+      expect(calls, 2);
+      expect(result, [explicit]);
+      calls = 0;
+      final fallback = await searchWaveCandidates(requested, (_) async {
+        calls++;
+        return [clean];
+      });
+      expect(calls, 2);
+      expect(fallback, [clean]);
+    },
+  );
+
+  test(
+    'edited seed queries omit censorship labels and retain version labels',
+    () async {
+      const requested = LastfmWaveTrack(
+        title: 'Song (Live) [Clean]',
+        artist: 'Artist',
+      );
+      final queries = <String>[];
+      await searchWaveCandidates(requested, (query) async {
+        queries.add(query);
+        return [];
+      });
+      expect(queries, ['Artist Song (Live)', 'Song (Live)']);
+    },
+  );
+
+  test('canonical artist aliases rank as the same matched recording', () {
+    const request = LastfmWaveTrack(title: 'Song', artist: 'Korn');
+    const clean = Track(
+      id: 'clean',
+      name: 'Song',
+      artistName: 'Korn',
+      albumName: '',
+      duration: 200,
+      explicit: false,
+    );
+    const explicit = Track(
+      id: 'explicit',
+      name: 'Song',
+      artistName: 'KoЯn',
+      albumName: '',
+      duration: 200,
+      explicit: true,
+    );
+    expect(matchWaveTrack(request, [clean, explicit]), same(explicit));
+  });
+
+  test(
+    'quality-first stops at a matched recording without searching an explicit override',
+    () async {
+      const request = LastfmWaveTrack(title: 'Song', artist: 'Artist');
+      const clean = Track(
+        id: 'clean',
+        name: 'Song',
+        artistName: 'Artist',
+        albumName: '',
+        duration: 200,
+        explicit: false,
+      );
+      var calls = 0;
+      final found = await searchWaveCandidates(request, (_) async {
+        calls++;
+        return [clean];
+      }, preferExplicit: false);
+      expect(calls, 1);
+      expect(found, [clean]);
+    },
+  );
+
   test('bounds lookups and retains matches after a provider failure', () async {
     var calls = 0;
     final candidates = List.generate(

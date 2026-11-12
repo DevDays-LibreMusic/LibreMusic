@@ -599,6 +599,12 @@ class SettingsSearchCatalog {
           ],
         ),
         SettingsSearchEntry(
+          icon: Icons.music_note_outlined,
+          title: l10n.downloadPreferExplicitTracks,
+          subtitle: l10n.downloadPreferExplicitTracksSubtitle,
+          keywords: const ['censorship', 'explicit', 'clean', 'quality'],
+        ),
+        SettingsSearchEntry(
           icon: Icons.wifi,
           title: l10n.settingsDownloadNetwork,
           subtitle: l10n.settingsDownloadNetworkSubtitle,
