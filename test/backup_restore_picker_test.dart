@@ -224,10 +224,17 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('Choose backup file'), 300);
     await tester.tap(find.text('Choose backup file'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 100)),
-    );
-    await tester.pumpAndSettle();
+    for (
+      var attempt = 0;
+      attempt < 40 && find.text('Restore').evaluate().isEmpty;
+      attempt++
+    ) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+    }
+    expect(find.text('Restore'), findsOneWidget);
     await tester.tap(find.text('Restore'));
     await tester.pump();
     expect(settings.restoreStarted.isCompleted, isTrue);
