@@ -61,6 +61,26 @@ test('catalog requests carry no account credentials; maps track metadata', () =>
   assert.strictEqual(t.provider_id, 'deezer-direct'); assert.strictEqual(t.duration_ms, 180000);
   assert.strictEqual(t.artists, 'Artist'); assert.strictEqual(t.isrc, track.isrc);
 });
+test('advisory metadata preserves explicit, non-explicit and unknown', () => {
+  for (const [fields, expected] of [
+    [{explicit_lyrics: true, explicit_content_lyrics: 1}, true],
+    [{explicit_lyrics: false, explicit_content_lyrics: 0}, false],
+    [{explicit_lyrics: false}, false],
+    [{explicit_lyrics: false, explicit_content_lyrics: 2}, null],
+    [{explicit_lyrics: 'false'}, null],
+    [{}, null]
+  ]) {
+    const raw = {...track, ...fields};
+    const h = load(req => new URL(req.url).pathname === '/track/42' ? ok(raw) : ok({data: [raw], total: 1}));
+    assert.strictEqual(h.extension.getTrack('42').explicit, expected);
+    assert.strictEqual(h.extension.searchTracks('Track', 1).tracks[0].explicit, expected);
+  }
+  const fixture = JSON.parse(fs.readFileSync(__dirname + '/../../test/fixtures/track_censorship/deezer_public_20261112.json'));
+  for (const row of fixture.responses) {
+    const h = load(() => ok(row.track));
+    assert.strictEqual(h.extension.getTrack(String(row.track.id)).explicit, row.track.explicit_lyrics);
+  }
+});
 test('search encodes text and caps results', () => {
   const h = load(req => { const u = new URL(req.url); assert.strictEqual(u.searchParams.get('q'), 'A & B'); assert.strictEqual(u.searchParams.get('limit'), '100'); return ok({data: [track], total: 200}); });
   assert.strictEqual(h.extension.searchTracks('A & B', 999).total, 200);
