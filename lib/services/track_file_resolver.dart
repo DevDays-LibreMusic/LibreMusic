@@ -15,11 +15,15 @@ resolveTrackFiles(
   required LibraryDatabase library,
   required HistoryDatabase history,
   required bool includeLocal,
+  bool strictRecording = false,
   Future<String?> Function(String source, String? historyId)? recoverDownload,
 }) async {
   if (tracks.isEmpty) {
     return (paths: const <String?>[], missingHistoryIds: const <String>{});
   }
+  bool allowNameMatch(Track track) =>
+      !strictRecording ||
+      (track.id.trim().isEmpty && (track.isrc?.trim().isEmpty ?? true));
   final localFuture = includeLocal
       ? library.findExistingBatch([
           for (final track in tracks)
@@ -28,8 +32,8 @@ resolveTrackFiles(
                   ? track.id
                   : null,
               isrc: track.isrc,
-              trackName: track.name,
-              artistName: track.artistName,
+              trackName: allowNameMatch(track) ? track.name : '',
+              artistName: allowNameMatch(track) ? track.artistName : '',
             ),
         ])
       : Future.value(List<Map<String, dynamic>?>.filled(tracks.length, null));
@@ -38,8 +42,8 @@ resolveTrackFiles(
       HistoryLookupRequest(
         spotifyId: track.id,
         isrc: track.isrc,
-        trackName: track.name,
-        artistName: track.artistName,
+        trackName: allowNameMatch(track) ? track.name : '',
+        artistName: allowNameMatch(track) ? track.artistName : '',
       ),
   ]);
   final localMatches = await localFuture;

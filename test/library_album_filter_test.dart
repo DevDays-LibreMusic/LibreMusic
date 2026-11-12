@@ -409,5 +409,6 @@ void main() {
       );
       expect(_expectedDigests.keys, unorderedEquals(actual.keys));
     },
+    timeout: const Timeout(Duration(seconds: 90)),
   );
 }

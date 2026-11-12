@@ -1,3 +1,4 @@
+import 'package:mornye/models/track.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +87,21 @@ Future<void> openPlayingAlbum(
     _log.w('Failed to resolve local album: $e');
   }
 
+  Track? catalogTrack;
+  try {
+    catalogTrack = await ref.read(
+      playerCollectionTrackProvider(mediaItem).future,
+    );
+  } catch (error) {
+    _log.w('Failed to resolve catalog album: $error');
+  }
   if (!context.mounted) return;
+  if (catalogTrack != null &&
+      (catalogTrack.albumId?.trim().isNotEmpty ?? false)) {
+    await navigateToTrackAlbum(context, catalogTrack);
+    return;
+  }
+
   await navigateToAlbum(
     context,
     albumName: albumName,

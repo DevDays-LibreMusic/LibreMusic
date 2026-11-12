@@ -119,6 +119,7 @@ double _meanDifference(Uint8List a, Uint8List b) {
 }
 
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
   late String songCover;
   late String artistCover;
@@ -126,6 +127,7 @@ void main() {
   late ValueNotifier<bool> tickers;
 
   setUp(() {
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     reduced = ValueNotifier(false);
     tickers = ValueNotifier(true);
   });

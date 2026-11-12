@@ -80,6 +80,7 @@ pub(super) fn download(
     }
     output.state.validator = validator.clone();
     output.state.total = total;
+    options.item.playback(&path.display());
     options.item.initial(output.state.bytes, total);
     let reporter = options.item.reporter(output.state.bytes, total);
     let mut notified = output.state.bytes;

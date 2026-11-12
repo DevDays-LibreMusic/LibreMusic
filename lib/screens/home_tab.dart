@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoIcons;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mornye/widgets/app_snack_bar.dart';
+import 'package:mornye/widgets/lastfm_wave_card.dart';
 import 'package:mornye/widgets/tv_navigation.dart';
 import 'package:mornye/theme/app_tokens.dart';
 import 'package:mornye/theme/cover_palette.dart';
@@ -897,6 +898,8 @@ class _HomeTabState extends ConsumerState<HomeTab>
         !hasExploreContent &&
         !hasResults;
     final searchToolbar = _offersLibraryScope;
+    // Keep the input mounted when focus reveals recent searches or results.
+    final compactHomeHeader = _showsHome;
     final showLibraryResults = _searchingLibrary && hasSearchInput;
     // The library scope waits for input before showing local matches.
     final showLibraryPrompt = _searchingLibrary && !hasSearchInput;
@@ -970,32 +973,36 @@ class _HomeTabState extends ConsumerState<HomeTab>
             slivers: [
               if (searchToolbar)
                 _buildDesktopSearchToolbarSliver()
+              else if (compactHomeHeader)
+                SliverAppBar(
+                  pinned: true,
+                  automaticallyImplyLeading: false,
+                  toolbarHeight: showSearchBar ? 72 : kToolbarHeight,
+                  titleSpacing: 16 + homeContentInset(context),
+                  title: showSearchBar
+                      ? _buildSearchBar()
+                      : Text(context.l10n.homeTitle),
+                  actions:
+                      !showSearchBar && context.isMornye && !isDesktopPlatform
+                      ? const [HomeProfileButton()]
+                      : null,
+                )
               else
-                _buildHeaderSliver(greeting: greeting),
+                _buildHeaderSliver(greeting: _showsHome ? null : greeting),
               if (_showsHome) const SliverToBoxAdapter(child: AppCrashBanner()),
-              if (_showsHome && !hasActiveSearchSurface)
-                SliverToBoxAdapter(
-                  child: ListTile(
-                    leading: const Icon(Icons.auto_awesome),
-                    title: Text(context.l10n.recFlowTitle),
-                    subtitle: Text(context.l10n.recFlowSubtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const RecommendationFlowScreen(),
-                      ),
-                    ),
-                  ),
+              if (showEmptyHomeState ||
+                  !_showsHome ||
+                  hasSearchInput ||
+                  hasResults)
+                _buildHomeIntroSliver(
+                  sectionMotion: sectionMotion,
+                  hasResults: hasResults,
+                  showExplore: showFeedSurface,
+                  colorScheme: colorScheme,
+                  screenHeight: screenHeight,
+                  showEmptyHomeState: showEmptyHomeState,
                 ),
-              _buildHomeIntroSliver(
-                sectionMotion: sectionMotion,
-                hasResults: hasResults,
-                showExplore: showFeedSurface,
-                colorScheme: colorScheme,
-                screenHeight: screenHeight,
-                showEmptyHomeState: showEmptyHomeState,
-              ),
-              if (showSearchBar && !searchToolbar)
+              if (showSearchBar && !searchToolbar && !compactHomeHeader)
                 _buildSearchBarSliver(
                   hasResults: hasResults,
                   showExplore: showFeedSurface,
@@ -1017,6 +1024,35 @@ class _HomeTabState extends ConsumerState<HomeTab>
                   !_searchingLibrary &&
                   !homeFeedDisabled)
                 _buildBrowseSliver(),
+              if (_showsHome && !hasSearchInput && !hasResults)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16 + homeContentInset(context),
+                      12,
+                      16 + homeContentInset(context),
+                      12,
+                    ),
+                    child: const LastfmWaveCard(),
+                  ),
+                ),
+              if (_showsHome && !hasActiveSearchSurface)
+                SliverToBoxAdapter(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      leading: const Icon(Icons.auto_awesome),
+                      title: Text(context.l10n.recFlowTitle),
+                      subtitle: Text(context.l10n.recFlowSubtitle),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const RecommendationFlowScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               _buildHomeSectionsSliver(
                 sectionMotion: sectionMotion,
                 hasResults: hasResults,

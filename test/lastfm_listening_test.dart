@@ -1,12 +1,17 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mornye/services/lastfm/lastfm_listening.dart';
+import 'package:mornye/services/wave_listening_observer.dart';
+import 'package:mornye/services/lastfm_account_service.dart';
 
 void main() {
   late Duration elapsed;
-  late LastfmListening listening;
-  late List<LastfmTrack> announcements;
-  late List<(LastfmTrack, DateTime)> scrobbles;
+  late WaveListeningObserver listening;
+  MediaItem? currentItem;
+  PlaybackState? currentState;
+  var enabled = true;
+  var unknownArtist = 'Unknown artist';
+  late List<LastfmListeningTrack> announcements;
+  late List<(LastfmListeningTrack, DateTime)> scrobbles;
   final start = DateTime.utc(2026, 11, 1, 12);
   MediaItem track({
     int instance = 1,
@@ -36,62 +41,93 @@ void main() {
     elapsed = Duration.zero;
     announcements = [];
     scrobbles = [];
-    listening = LastfmListening(
-      elapsed: () => elapsed,
+    listening = WaveListeningObserver(
+      maxSampleGap: const Duration(days: 1),
       now: () => start.add(elapsed),
-      onNowPlaying: announcements.add,
-      onScrobble: (track, timestamp) => scrobbles.add((track, timestamp)),
     );
+    currentItem = null;
+    currentState = null;
+    enabled = true;
+    unknownArtist = 'Unknown artist';
   });
 
+  void tick() {
+    final result = listening.observe(
+      currentItem,
+      currentState,
+      elapsed,
+      enabled: enabled,
+      unknownArtist: unknownArtist,
+    );
+    if (result.nowPlaying case final occurrence?) {
+      announcements.add(occurrence.track);
+    }
+    for (final occurrence in result.scrobbles) {
+      scrobbles.add((occurrence.track, occurrence.startedAt));
+    }
+  }
+
+  void update(
+    MediaItem item,
+    PlaybackState state, {
+    required bool enabledValue,
+    String unknownArtistValue = 'Unknown artist',
+  }) {
+    currentItem = item;
+    currentState = state;
+    enabled = enabledValue;
+    unknownArtist = unknownArtistValue;
+    tick();
+  }
+
   test('scrobbles at half duration once, with original UTC start time', () {
-    listening.update(track(), state(), enabled: true);
+    update(track(), state(), enabledValue: true);
     expect(announcements, hasLength(1));
     elapsed = const Duration(seconds: 119);
-    listening.tick();
+    tick();
     expect(scrobbles, isEmpty);
     elapsed = const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles.single.$2, start);
-    expect(scrobbles.single.$1.toJson(), {
+    expect(scrobbles.single.$1.parameters, {
       'track': 'Song',
       'artist': 'Artist',
       'album': 'Album',
       'duration': '240',
     });
     elapsed = const Duration(minutes: 10);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(1));
   });
 
   test('seeking does not add listening time or begin another play', () {
-    listening.update(track(), state(), enabled: true);
+    update(track(), state(), enabledValue: true);
     elapsed = const Duration(seconds: 10);
-    listening.update(track(), state(position: 230), enabled: true);
+    update(track(), state(position: 230), enabledValue: true);
     expect(scrobbles, isEmpty);
     elapsed = const Duration(seconds: 20);
-    listening.update(track(), state(position: 0), enabled: true);
+    update(track(), state(position: 0), enabledValue: true);
     expect(announcements, hasLength(1));
     elapsed = const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(1));
   });
 
   test(
     'pause and buffering stop accrual; resume keeps the listening total',
     () {
-      listening.update(track(), state(), enabled: true);
+      update(track(), state(), enabledValue: true);
       elapsed = const Duration(seconds: 40);
-      listening.update(track(), state(playing: false), enabled: true);
+      update(track(), state(playing: false), enabledValue: true);
       elapsed = const Duration(minutes: 10);
-      listening.update(track(), state(buffering: true), enabled: true);
+      update(track(), state(buffering: true), enabledValue: true);
       elapsed += const Duration(seconds: 30);
-      listening.update(track(), state(), enabled: true);
+      update(track(), state(), enabledValue: true);
       elapsed += const Duration(seconds: 79);
-      listening.tick();
+      tick();
       expect(scrobbles, isEmpty);
       elapsed += const Duration(seconds: 1);
-      listening.tick();
+      tick();
       expect(scrobbles, hasLength(1));
       expect(scrobbles.single.$2, start);
       expect(announcements, hasLength(2));
@@ -99,80 +135,76 @@ void main() {
   );
 
   test('short songs are excluded; long songs qualify after four minutes', () {
-    listening.update(track(seconds: 30), state(), enabled: true);
+    update(track(seconds: 30), state(), enabledValue: true);
     elapsed = const Duration(minutes: 10);
-    listening.tick();
+    tick();
     expect(scrobbles, isEmpty);
-    listening.update(track(instance: 2, seconds: 900), state(), enabled: true);
+    update(track(instance: 2, seconds: 900), state(), enabledValue: true);
     elapsed += const Duration(seconds: 239);
-    listening.tick();
+    tick();
     expect(scrobbles, isEmpty);
     elapsed += const Duration(seconds: 1);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(1));
   });
 
   test('metadata updates preserve a play and late duration can qualify it', () {
-    listening.update(track(seconds: null), state(), enabled: true);
+    update(track(seconds: null), state(), enabledValue: true);
     elapsed = const Duration(seconds: 120);
-    listening.update(track(), state(), enabled: true);
+    update(track(), state(), enabledValue: true);
     expect(scrobbles, hasLength(1));
-    listening.update(
+    update(
       track().copyWith(title: 'Edited title'),
       state(),
-      enabled: true,
+      enabledValue: true,
     );
     elapsed += const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(1));
     expect(announcements, hasLength(1));
   });
 
   test('repeat-one is a separate listen even with the same media ID', () {
-    listening.update(track(), state(), enabled: true);
+    update(track(), state(), enabledValue: true);
     elapsed = const Duration(seconds: 120);
-    listening.tick();
-    listening.update(track(instance: 2), state(), enabled: true);
+    tick();
+    update(track(instance: 2), state(), enabledValue: true);
     elapsed += const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(2));
     expect(scrobbles.last.$2, start.add(const Duration(seconds: 120)));
     expect(announcements, hasLength(2));
   });
 
   test('restored paused position and disabled time are not scrobbled', () {
-    listening.update(
-      track(),
-      state(playing: false, position: 200),
-      enabled: true,
-    );
+    update(track(), state(playing: false, position: 200), enabledValue: true);
     elapsed = const Duration(minutes: 20);
-    listening.update(track(), state(position: 200), enabled: false);
+    update(track(), state(position: 200), enabledValue: false);
     elapsed += const Duration(minutes: 10);
-    listening.update(track(), state(position: 200), enabled: true);
+    update(track(), state(position: 200), enabledValue: true);
     expect(scrobbles, isEmpty);
     elapsed += const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles.single.$2, start.add(const Duration(minutes: 30)));
-    listening.update(track(), state(), enabled: false);
-    listening.update(track(), state(), enabled: true);
+    update(track(), state(), enabledValue: false);
+    update(track(), state(), enabledValue: true);
     elapsed += const Duration(seconds: 120);
-    listening.tick();
+    tick();
     expect(scrobbles, hasLength(1));
   });
 
   test('missing and localized unknown metadata never leaves the player', () {
-    listening.update(track(artist: ''), state(), enabled: true);
+    update(track(artist: ''), state(), enabledValue: true);
     elapsed = const Duration(minutes: 5);
-    listening.tick();
-    listening.update(
+    tick();
+    update(
       track(artist: 'Artis tidak dikenal'),
       state(),
-      enabled: true,
-      unknownArtist: 'Artis tidak dikenal',
+      enabledValue: true,
+      unknownArtistValue: 'Artis tidak dikenal',
     );
     elapsed += const Duration(minutes: 5);
-    listening.tick();
+    tick();
     expect(announcements, isEmpty);
     expect(scrobbles, isEmpty);
   });

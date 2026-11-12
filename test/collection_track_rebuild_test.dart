@@ -145,6 +145,9 @@ void main() {
       expect(builds, 1);
       expect(find.text('Example song'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
       await tester.pumpWidget(const SizedBox());
     },
   );
@@ -189,6 +192,9 @@ void main() {
         );
         expect(collections._batchCalls, 2);
         expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+        await tester.pump();
       },
     );
 
@@ -260,6 +266,9 @@ void main() {
           findsWidgets,
         );
         expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+        await tester.pump();
         await tester.pumpWidget(const SizedBox());
       });
     }

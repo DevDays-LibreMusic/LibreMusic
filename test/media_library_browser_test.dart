@@ -210,6 +210,7 @@ List<String> _titles(List<MediaItem> items) => [
 ];
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('the root shows song, album, artist and playlist tabs', () async {
     final tabs = await _browser().children(AudioService.browsableRootId);
 

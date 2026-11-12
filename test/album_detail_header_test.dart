@@ -70,6 +70,10 @@ Future<Uint8List> _pixels(WidgetTester tester) async =>
     }))!;
 
 void main() {
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     // Colour blocks and a bright band, so the blur has edges to soften.

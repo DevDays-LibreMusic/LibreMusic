@@ -11,6 +11,7 @@ import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/models/settings.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
+import 'package:mornye/providers/download_playback_provider.dart';
 import 'package:mornye/providers/extension_provider.dart';
 import 'package:mornye/providers/library_collections_provider.dart';
 import 'package:mornye/providers/local_library_provider.dart';
@@ -91,9 +92,31 @@ class _Playback extends PlaybackController {
   };
 
   @override
-  Future<List<String?>> resolveTrackFilePaths(List<Track> tracks) async {
+  Future<List<String?>> resolveTrackFilePaths(
+    List<Track> tracks, {
+    bool strictRecording = false,
+  }) async {
     resolvedRequests.add(tracks.map((track) => track.id).toList());
     return [for (final track in tracks) paths[track.id]];
+  }
+}
+
+class _Downloads extends Fake implements DownloadPlaybackCoordinator {
+  int? startIndex;
+
+  @override
+  Future<List<String?>> fillMissingPaths(
+    List<Track> tracks,
+    List<String?> paths, {
+    required int startIndex,
+    Future<String?> Function(Track track)? resolveExisting,
+    String? attempt,
+  }) async {
+    this.startIndex = startIndex;
+    return [
+      for (var index = 0; index < tracks.length; index++)
+        paths[index] ?? 'mornye-download:${tracks[index].id}',
+    ];
   }
 }
 
@@ -944,6 +967,32 @@ void main() {
         .read(playbackProvider.notifier)
         .playTrackList(_tracks, startIndex: 1);
     expect(player.queue[player.index!].title, 'Selected');
+  });
+
+  test('missing tracks join the queue as progressive downloads', () async {
+    final downloads = _Downloads();
+    final scoped = ProviderContainer(
+      overrides: [
+        settingsProvider.overrideWith(_Settings.new),
+        musicPlayerControllerProvider.overrideWithValue(player),
+        playbackProvider.overrideWith(() => playback),
+        downloadPlaybackProvider.overrideWithValue(downloads),
+      ],
+    );
+    addTearDown(scoped.dispose);
+
+    await scoped
+        .read(playbackProvider.notifier)
+        .playTrackList(_tracks, startIndex: 1);
+
+    expect(downloads.startIndex, 1);
+    expect(player.index, 1);
+    expect(player.queue.map((item) => item.source), [
+      'content://library/first',
+      'mornye-download:Unavailable',
+      'content://library/selected',
+      'content://library/last',
+    ]);
   });
 
   test('empty playlist leaves existing playback alone', () async {

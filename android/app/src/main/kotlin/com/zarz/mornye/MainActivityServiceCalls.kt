@@ -8,7 +8,9 @@ import kotlinx.coroutines.withContext
 internal suspend fun MainActivity.handleDownloadByStrategy(call: MethodCall, result: MethodChannel.Result) {
     val requestJson = call.arguments as String
     val response = withContext(Dispatchers.IO) {
-        SafDownloadHandler.handle(this@handleDownloadByStrategy, requestJson, coreBackend)
+        coreBackend.openDownloadDirectoryForRequest(requestJson).use {
+            SafDownloadHandler.handle(this@handleDownloadByStrategy, requestJson, coreBackend)
+        }
     }
     result.success(response)
 }

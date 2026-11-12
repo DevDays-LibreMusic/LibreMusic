@@ -105,11 +105,14 @@ class _BatchQueue extends _Queue {
   _BatchQueue(this._record);
   final void Function(List<DownloadQueueBatch>, String, String?) _record;
   @override
-  void addBatchesToQueue(
+  List<String> addBatchesToQueue(
     List<DownloadQueueBatch> batches,
     String service, {
     String? qualityOverride,
-  }) => _record(batches, service, qualityOverride);
+  }) {
+    _record(batches, service, qualityOverride);
+    return const [];
+  }
 }
 
 class _SelectionCollections extends LibraryCollectionsNotifier {

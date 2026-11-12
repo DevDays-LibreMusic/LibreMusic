@@ -26,7 +26,9 @@ class MornyePlayerQueue extends ConsumerWidget {
         ),
       ),
     );
-    final start = ref.watch(currentQueueIndexProvider) + 1;
+    final currentIndex = ref.watch(currentQueueIndexProvider);
+    final start = (currentIndex + 1).clamp(0, queue.length);
+    final russian = Localizations.localeOf(context).languageCode == 'ru';
     final count = queue.length - start;
     final controller = ref.read(musicPlayerControllerProvider);
     final autoMix = ref.watch(settingsProvider.select((s) => s.autoMix));
@@ -187,6 +189,49 @@ class MornyePlayerQueue extends ConsumerWidget {
                             .setAutoplay(!autoplay),
                       ),
                     ],
+                  ),
+                if (currentIndex > 0)
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    iconColor: Colors.white70,
+                    collapsedIconColor: Colors.white70,
+                    title: Text(
+                      russian ? 'Ранее в очереди' : 'Earlier in queue',
+                      style: type.titleMedium?.copyWith(color: Colors.white70),
+                    ),
+                    children: [
+                      for (var i = 0; i < currentIndex && i < queue.length; i++)
+                        ListTile(
+                          title: Text(
+                            queue[i].title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            queue[i].artist ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () => controller.jumpTo(i),
+                        ),
+                    ],
+                  ),
+                if (currentIndex >= 0 && currentIndex < queue.length)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.graphic_eq, color: Colors.white),
+                    title: Text(
+                      queue[currentIndex].title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: type.titleMedium?.copyWith(color: Colors.white),
+                    ),
+                    subtitle: Text(
+                      russian ? 'Сейчас играет' : 'Now playing',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),

@@ -115,6 +115,11 @@ void main() {
         expect(find.byIcon(CupertinoIcons.back), findsOneWidget);
         expect(find.byIcon(CupertinoIcons.ellipsis), findsOneWidget);
         expect(find.byType(Card), findsNothing);
+        await tester.scrollUntilVisible(
+          find.text('Track name'),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
         final row = find.widgetWithText(MornyeMetadataRow, 'Track name');
         expect(
           find.ancestor(of: row, matching: find.byType(MornyeGlass)),

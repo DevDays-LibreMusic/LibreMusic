@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
@@ -8,6 +9,7 @@ import 'package:mornye/models/track.dart';
 import 'package:mornye/models/unified_library_item.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
+import 'package:mornye/services/download_playback.dart';
 import 'package:mornye/services/history_database.dart';
 import 'package:mornye/services/history_row_mapper.dart';
 import 'package:mornye/services/library_database.dart';
@@ -36,10 +38,10 @@ final playerUiEnabledProvider = Provider<bool>((ref) {
     return true;
   }
   return ref.watch(
-    localMediaItemProvider.select(
-      (state) =>
-          isRemoteLibraryPath(state.value?.extras?['source']?.toString()),
-    ),
+    localMediaItemProvider.select((state) {
+      final source = state.value?.extras?['source']?.toString() ?? '';
+      return isRemoteLibraryPath(source) || isDownloadPlaybackSource(source);
+    }),
   );
 });
 
@@ -138,6 +140,16 @@ Future<UnifiedLibraryItem?> _libraryItemForMedia(
 /// playback started from a file path rather than a Library row ID.
 final playerCollectionTrackProvider = FutureProvider.autoDispose
     .family<Track, MediaItem>((ref, item) async {
+      final catalog = item.extras?['catalogTrack'];
+      if (catalog is String && catalog.isNotEmpty) {
+        try {
+          return Track.fromJson(
+            Map<String, dynamic>.from(jsonDecode(catalog) as Map),
+          );
+        } on Object {
+          // A malformed external media item can still use the Library identity.
+        }
+      }
       final match = await _libraryItemForMedia(
         ref,
         id: item.id,
@@ -151,6 +163,10 @@ final playerCollectionTrackProvider = FutureProvider.autoDispose
         covers: ref.watch(musicPlayerRuntimeProvider).dependencies.coverStore,
       );
     });
+
+final localPlaybackStateProvider = StreamProvider<PlaybackState>(
+  (ref) => ref.watch(musicPlayerRuntimeProvider).playbackStateEvents(),
+);
 
 final playbackStateProvider = StreamProvider<PlaybackState>((ref) {
   if (!ref.watch(playerUiEnabledProvider)) return Stream.value(PlaybackState());

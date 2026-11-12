@@ -10,10 +10,12 @@ on:
       - "lib/widgets/duplicate_review_sheet.dart"
       - "test/duplicate_review_sheet_test.dart"
       - "test/settings_bottom_inset_test.dart"
-      - "lib/services/lastfm/**"
-      - "lib/widgets/lastfm_settings.dart"
+      - "lib/services/lastfm_account_*.dart"
+      - "lib/services/wave_listening_observer.dart"
+      - "lib/providers/lastfm_account_provider.dart"
+      - "lib/widgets/lastfm_account_sheet.dart"
       - "test/lastfm*_test.dart"
-      - "test/support/lastfm_fakes.dart"
+      - "test/wave_listening_observer_test.dart"
       - "rust_backend/**"
       - "third_party/**"
       - "scripts/build_rust_backend.sh"
@@ -105,7 +107,7 @@ jobs:
         run: |
           dart scripts/prepare_flutter_sdk.dart
           flutter test --no-pub test/semantics_geometry_regression_test.dart
-          flutter test --no-pub test/lastfm_api_test.dart test/lastfm_listening_test.dart test/lastfm_service_test.dart test/lastfm_store_test.dart test/lastfm_settings_test.dart
+          flutter test --no-pub test/lastfm_account_service_test.dart test/lastfm_account_controller_test.dart test/lastfm_account_provider_test.dart test/wave_listening_observer_test.dart test/lastfm_listening_test.dart test/lastfm_store_test.dart test/lastfm_settings_test.dart
 
       # The Xcode "Embed Rust Backend" and "Embed FFmpeg" phases embed the
       # library and the FFmpeg tools built above.

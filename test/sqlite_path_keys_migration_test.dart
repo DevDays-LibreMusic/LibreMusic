@@ -189,12 +189,16 @@ void main() {
   test('v14 upgrade rolls back a later-page failure and can retry', () async {
     final db = await SqliteProcessDatabase.open();
     addTearDown(db.close);
+    // v14 already has format and the v9 scan-version column. Later migrations
+    // must see a valid old schema, not fail before/after the injected trigger.
     await db.execute('''
       CREATE TABLE library(
         id TEXT PRIMARY KEY, file_path TEXT,
         source_id TEXT NOT NULL DEFAULT 'legacy', isrc TEXT,
         format TEXT, audio_metadata_scan_version INTEGER NOT NULL DEFAULT 0,
-        match_key TEXT DEFAULT 'song|artist'
+        match_key TEXT DEFAULT 'song|artist', album_key TEXT,
+        track_name_norm TEXT, artist_name_norm TEXT, album_name_norm TEXT,
+        album_artist_norm TEXT
       )
     ''');
     await createPathKeyTable(db, 'library_path_keys');
@@ -216,7 +220,13 @@ void main() {
         await LibrarySchema.upgrade(db, 14, LibrarySchema.version);
         await db.execute('PRAGMA user_version = ${LibrarySchema.version}');
       }),
-      throwsA(isA<StateError>()),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'injected failure',
+          contains('simulated storage failure'),
+        ),
+      ),
     );
     expect(await db.query('library_path_keys'), isEmpty);
     expect((await db.rawQuery('PRAGMA user_version')).single.values.single, 14);

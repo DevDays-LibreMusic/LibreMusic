@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mornye/l10n/l10n.dart';
+import 'package:mornye/widgets/wave_controls.dart';
 import 'package:mornye/providers/library_collections_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/theme/cover_palette.dart';
@@ -99,6 +100,12 @@ class MornyePlayerActionsSheet extends ConsumerWidget {
         ],
         groups: [
           [
+            _action(
+              context,
+              'wave',
+              waveText(context, 'Волна по треку', 'Wave by track'),
+              Icons.waves,
+            ),
             _action(
               context,
               'playlist',

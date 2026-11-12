@@ -77,6 +77,17 @@ String _redactSensitiveText(String value) {
 /// Crash reports use the same secret filtering as the ordinary log export.
 String redactDiagnosticText(String value) => _redactSensitiveText(value);
 
+/// Redaction for shareable exports, including selected log entries.
+String sanitizeLogExportText(String text) {
+  return _redactSensitiveText(text).replaceAll(
+    RegExp(
+      r'''(?:[a-z][a-z0-9+.-]*://|(?:^|[^a-z0-9])/|[a-z]:[\\/])[^\s\"'<>]+''',
+      caseSensitive: false,
+    ),
+    '[location omitted]',
+  );
+}
+
 class LogEntry {
   final DateTime timestamp;
   final String level;
@@ -127,6 +138,8 @@ class LogBuffer extends ChangeNotifier {
   static const _nativeLogs = NativeLogSource();
   static const Duration _nativeLogPollingInterval = Duration(milliseconds: 800);
   final Queue<LogEntry> _entries = Queue<LogEntry>();
+  final Queue<LogEntry> _diagnostics = Queue<LogEntry>();
+  static const maxDiagnosticEntries = 120;
   Timer? _nativeLogTimer;
   int _lastNativeLogIndex = 0;
   bool _isFetchingNativeLogs = false;
@@ -145,8 +158,16 @@ class LogBuffer extends ChangeNotifier {
     _nativeLogs.setLoggingEnabled(value).catchError((_) {});
   }
 
-  List<LogEntry> get entries => _entries.toList();
-  int get length => _entries.length;
+  List<LogEntry> get entries {
+    final ordered = [..._entries, ..._diagnostics].indexed.toList()
+      ..sort((a, b) {
+        final time = a.$2.timestamp.compareTo(b.$2.timestamp);
+        return time != 0 ? time : a.$1.compareTo(b.$1);
+      });
+    return ordered.map((entry) => entry.$2).toList();
+  }
+
+  int get length => _entries.length + _diagnostics.length;
 
   void add(LogEntry entry) {
     if (_append(entry)) notifyListeners();
@@ -162,7 +183,10 @@ class LogBuffer extends ChangeNotifier {
   }
 
   bool _append(LogEntry entry) {
-    if (!_loggingEnabled && entry.level != 'ERROR' && entry.level != 'FATAL') {
+    if (!_loggingEnabled &&
+        entry.level != 'ERROR' &&
+        entry.level != 'FATAL' &&
+        entry.level != 'DIAG') {
       return false;
     }
 
@@ -188,6 +212,13 @@ class LogBuffer extends ChangeNotifier {
             isFromNative: entry.isFromNative,
           );
 
+    if (entry.level == 'DIAG') {
+      if (_diagnostics.length >= maxDiagnosticEntries) {
+        _diagnostics.removeFirst();
+      }
+      _diagnostics.add(sanitizedEntry);
+      return true;
+    }
     if (_entries.length >= maxEntries) {
       _entries.removeFirst();
     }
@@ -232,7 +263,10 @@ class LogBuffer extends ChangeNotifier {
       for (final log in logs.whereType<Map<Object?, Object?>>()) {
         final logMap = Map<String, dynamic>.from(log);
         final level = logMap['level'] as String? ?? 'INFO';
-        if (!keepNonErrorLogs && level != 'ERROR' && level != 'FATAL') {
+        if (!keepNonErrorLogs &&
+            level != 'ERROR' &&
+            level != 'FATAL' &&
+            level != 'DIAG') {
           continue;
         }
 
@@ -281,6 +315,7 @@ class LogBuffer extends ChangeNotifier {
 
   void clear() {
     _entries.clear();
+    _diagnostics.clear();
     _lastNativeLogIndex = 0;
     _nativeLogGeneration++;
     late final Future<void> clearing;
@@ -298,6 +333,7 @@ class LogBuffer extends ChangeNotifier {
   }
 
   Future<String> exportWithDeviceInfo() async {
+    await _fetchNativeLogs(_nativeLogGeneration);
     final buffer = StringBuffer();
 
     buffer.writeln('=' * 60);
@@ -308,6 +344,9 @@ class LogBuffer extends ChangeNotifier {
     buffer.writeln('--- App Information ---');
     buffer.writeln(
       'App Version: ${AppInfo.version} (Build ${AppInfo.buildNumber})',
+    );
+    buffer.writeln(
+      'Diagnostic build: ${const String.fromEnvironment("MORNYE_DIAGNOSTIC_BUILD", defaultValue: "development")}',
     );
     buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
     buffer.writeln();
@@ -371,7 +410,7 @@ class LogBuffer extends ChangeNotifier {
     buffer.writeln();
 
     buffer.writeln('--- Log Summary ---');
-    buffer.writeln('Total Entries: ${_entries.length}');
+    buffer.writeln('Total Entries: $length');
 
     int errorCount = 0;
     int warnCount = 0;
@@ -379,7 +418,7 @@ class LogBuffer extends ChangeNotifier {
     int debugCount = 0;
     int nativeCount = 0;
 
-    for (final entry in _entries) {
+    for (final entry in entries) {
       switch (entry.level) {
         case 'ERROR' || 'FATAL':
           errorCount++;
@@ -405,17 +444,19 @@ class LogBuffer extends ChangeNotifier {
     buffer.writeln('=' * 60);
     buffer.writeln();
 
-    for (final entry in _entries) {
+    for (final entry in entries) {
       buffer.writeln(entry.toString());
     }
 
-    return buffer.toString();
+    // Export is shareable: strip whole URLs (including signed path tokens) and
+    // absolute paths from older free-form errors as well as structured traces.
+    return sanitizeLogExportText(buffer.toString());
   }
 
   List<LogEntry> filter({String? level, String? search}) {
     final searchLower = search?.toLowerCase();
 
-    return _entries.where((entry) {
+    return entries.where((entry) {
       if (level != null && level != 'ALL' && entry.level != level) {
         return false;
       }
@@ -486,7 +527,10 @@ class AppLogger {
   }
 
   void _addToBuffer(String level, String message, {String? error}) {
-    if (!LogBuffer.loggingEnabled && level != 'ERROR' && level != 'FATAL') {
+    if (!LogBuffer.loggingEnabled &&
+        level != 'ERROR' &&
+        level != 'FATAL' &&
+        level != 'DIAG') {
       return;
     }
 

@@ -13,6 +13,7 @@ import 'package:mornye/providers/library_collections_provider.dart';
 import 'package:mornye/providers/local_library_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
+import 'package:mornye/providers/wave_session_provider.dart';
 import 'package:mornye/screens/queue_tab.dart';
 import 'package:mornye/services/history_database.dart';
 import 'package:mornye/services/library_database.dart';
@@ -61,6 +62,11 @@ class _Collections extends LibraryCollectionsNotifier {
 class _Queue extends DownloadQueueNotifier {
   @override
   DownloadQueueState build() => DownloadQueueState();
+}
+
+class _IdleWave extends WaveSessionController {
+  @override
+  WaveSessionState build() => const WaveSessionState(loaded: true);
 }
 
 /// Titles the database reports instead of `Song <n>`.
@@ -156,6 +162,9 @@ void main() {
       if (call.method == 'execute' && sql.contains('CREATE VIRTUAL TABLE')) {
         throw PlatformException(code: 'sqlite_error', message: 'no fts5');
       }
+      if (call.method == 'execute' && args['inTransaction'] == true) {
+        return {'transactionId': 1};
+      }
       if (call.method != 'query') return null;
       if (sql.toLowerCase().contains('pragma user_version')) {
         return {
@@ -197,6 +206,11 @@ void main() {
     late StreamController<MediaItem?> nowPlaying;
 
     Future<void> pumpLibrary(WidgetTester tester) async {
+      // Open through the MethodChannel fixture before desktop selects FFI.
+      await tester.runAsync(() async {
+        await LibraryDatabase.instance.database;
+        await HistoryDatabase.instance.database;
+      });
       debugDesktopPlatformOverride = true;
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1;
@@ -204,7 +218,11 @@ void main() {
       themeMode = ValueNotifier(ThemeMode.light);
       addTearDown(themeMode.dispose);
       nowPlaying = StreamController<MediaItem?>();
-      addTearDown(nowPlaying.close);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await nowPlaying.close();
+      });
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -213,6 +231,7 @@ void main() {
             localLibraryProvider.overrideWith(_Local.new),
             libraryCollectionsProvider.overrideWith(_Collections.new),
             downloadQueueProvider.overrideWith(_Queue.new),
+            waveSessionProvider.overrideWith(_IdleWave.new),
             downloadQueueLookupProvider.overrideWithValue(
               DownloadQueueLookup.fromItems(const []),
             ),

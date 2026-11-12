@@ -147,10 +147,39 @@ class NativeFlacConversionTest {
                             execute(arguments).also { result ->
                                 if (mode == "corrupt-remux" && "copy" in arguments && result.first) {
                                     val bytes = output.readBytes()
-                                    for (index in bytes.size - 50 until bytes.size - 34) {
-                                        bytes[index] = (bytes[index].toInt() xor 0x55).toByte()
+                                    // Keep metadata and the frame header intact, but use a
+                                    // reserved subframe type. Tail-byte flips can change PCM
+                                    // without causing a fatal decode error on older FFmpeg.
+                                    var frame = 4
+                                    do {
+                                        val last = bytes[frame].toInt() and 0x80 != 0
+                                        val length = ((bytes[frame + 1].toInt() and 0xff) shl 16) or
+                                            ((bytes[frame + 2].toInt() and 0xff) shl 8) or
+                                            (bytes[frame + 3].toInt() and 0xff)
+                                        frame += 4 + length
+                                    } while (!last)
+                                    assertEquals(0xff, bytes[frame].toInt() and 0xff)
+                                    assertEquals(0xf8, bytes[frame + 1].toInt() and 0xfe)
+                                    val blockSizeCode = (bytes[frame + 2].toInt() and 0xff) shr 4
+                                    val sampleRateCode = bytes[frame + 2].toInt() and 0x0f
+                                    val numberPrefix = bytes[frame + 4].toInt() and 0xff
+                                    var numberBytes = 0
+                                    var mask = 0x80
+                                    while (numberPrefix and mask != 0 && mask != 0) {
+                                        numberBytes++
+                                        mask = mask shr 1
                                     }
+                                    var subframe = frame + 4 + maxOf(1, numberBytes)
+                                    subframe += when (blockSizeCode) { 6 -> 1; 7 -> 2; else -> 0 }
+                                    subframe += when (sampleRateCode) { 12 -> 1; 13, 14 -> 2; else -> 0 }
+                                    subframe++ // Frame-header CRC-8.
+                                    bytes[subframe] = 0x04 // Reserved subframe type 2.
                                     output.writeBytes(bytes)
+                                    val validation = execute(arrayOf(
+                                        "-v", "error", "-xerror", "-err_detect", "crccheck+explode",
+                                        "-i", output.path, "-map", "0:a:0", "-f", "null", "-",
+                                    ))
+                                    assertFalse("$sampleRate Hz fixture must fail decoding: ${validation.second}", validation.first)
                                 }
                             }
                         }

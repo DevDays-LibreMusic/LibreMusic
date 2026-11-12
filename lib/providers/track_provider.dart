@@ -1,3 +1,4 @@
+import 'package:mornye/services/playback_diagnostics.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -483,10 +484,21 @@ class TrackNotifier extends Notifier<TrackState> {
       }
 
       final tracks = <Track>[];
+      final searchAttempt = PlaybackDiagnostics.begin('search');
       for (int i = 0; i < results.length; i++) {
         final t = results[i];
         try {
-          tracks.add(Track.fromBackendMap(t, source: extensionId));
+          final track = Track.fromBackendMap(t, source: extensionId);
+          PlaybackDiagnostics.bindTrack(track, searchAttempt);
+          if (i < 5) {
+            PlaybackDiagnostics.track(
+              'metadata',
+              track,
+              origin: 'search',
+              attempt: searchAttempt,
+            );
+          }
+          tracks.add(track);
         } catch (e) {
           _log.e('Failed to parse custom search track[$i]: $e', e);
         }

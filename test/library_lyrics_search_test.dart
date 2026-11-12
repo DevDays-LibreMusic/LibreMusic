@@ -19,7 +19,7 @@ void main() {
         db = await SqliteProcessDatabase.open();
         await createNativeLibraryFixture(db);
         await db.execute('''CREATE TABLE history_db.history (
-          id TEXT PRIMARY KEY, file_path TEXT, track_name TEXT,
+          id TEXT PRIMARY KEY, file_path TEXT, origin_file_path TEXT, track_name TEXT,
           artist_name TEXT, cover_url TEXT, downloaded_at TEXT, has_lyrics INTEGER
         )''');
         await db.insert('history_db.history', {

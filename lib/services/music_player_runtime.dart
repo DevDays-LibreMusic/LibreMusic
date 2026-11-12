@@ -23,10 +23,10 @@ import 'package:mornye/services/cast_playback_deck.dart';
 import 'package:mornye/services/discord_presence_service.dart';
 import 'package:mornye/services/history_database.dart';
 import 'package:mornye/services/download_file_recovery.dart';
+import 'package:mornye/services/download_playback.dart';
 import 'package:mornye/services/library_collections_database.dart';
 import 'package:mornye/services/library_database.dart';
 import 'package:mornye/services/listening_statistics.dart';
-import 'package:mornye/services/lastfm/lastfm_service.dart';
 import 'package:mornye/services/media_kit_playback_deck.dart';
 import 'package:mornye/services/media_library_browser.dart';
 import 'package:mornye/services/media_session_art_cache.dart';
@@ -77,6 +77,10 @@ class PlaybackDependencies {
     this.resolveMusicServerSource = _resolveMusicServerSource,
     this.offlineCopy = _offlineCopy,
     this.networkCache = _networkCache,
+    this.resolveDownloadSource = _resolveDownloadSource,
+    this.prepareDownloadWindow = _prepareDownloadWindow,
+    this.suspendDownloadWindow = _suspendDownloadWindow,
+    this.releaseDownloadSources = _releaseDownloadSources,
     this.networkSourceReachable = _networkSourceReachable,
     this.recoverMissingFile = _recoverMissingFile,
     this.fileAccess = checkFileAccess,
@@ -134,6 +138,10 @@ class PlaybackDependencies {
   /// The local copies of network songs around the one playing; null plays
   /// every network song from its server.
   final NetworkPlaybackCache? Function() networkCache;
+  final Future<String> Function(String) resolveDownloadSource;
+  final Future<void> Function(List<String>, int) prepareDownloadWindow;
+  final void Function() suspendDownloadWindow;
+  final void Function() releaseDownloadSources;
 
   /// Whether a `network://` Library song can play now, as autoplay asks
   /// before queueing it.
@@ -251,6 +259,14 @@ class PlaybackDependencies {
 
   static NetworkPlaybackCache? _networkCache() => NetworkPlaybackCache.instance;
 
+  static Future<void> _prepareDownloadWindow(List<String> sources, int index) =>
+      DownloadPlaybackService.instance.prepareWindow(sources, index);
+  static void _releaseDownloadSources() =>
+      DownloadPlaybackService.instance.releaseSources();
+  static void _suspendDownloadWindow() =>
+      DownloadPlaybackService.instance.suspendWindow();
+  static Future<String> _resolveDownloadSource(String source) =>
+      DownloadPlaybackService.instance.resolve(source);
   static Future<bool> _networkSourceReachable(String source) =>
       NetworkStorageService.instance.reachable(source);
   static Future<String?> _recoverMissingFile(String path) async {
@@ -314,8 +330,6 @@ class MusicPlayerRuntime {
   }) : _settings = settings;
 
   final PlaybackDependencies dependencies;
-  LastfmService? _lastfm;
-  LastfmService get lastfm => _lastfm ??= LastfmService();
   AutoplayPersonalization? _personalization;
   // What learning observes also teaches [taste] what plays together and
   // [ranker] how much each part of a score counts.
@@ -564,7 +578,6 @@ class MusicPlayerRuntime {
 
   void detach(MusicPlayerHandler handler) {
     if (!identical(_handler, handler)) return;
-    _lastfm?.bind(null);
     _unsubscribeSourceDeletion?.call();
     _unsubscribeSourceDeletion = null;
     _unsubscribeSourceMetadata?.call();
@@ -610,13 +623,6 @@ class MusicPlayerRuntime {
       // Desktop presence goes through the Rust IPC client instead of the SDK.
       if (dependencies.isAndroid || dependencies.isIOS || isDesktopPlatform) {
         DiscordPresenceService.instance.bind(handler);
-      }
-      if (isDesktopPlatform) {
-        lastfm.bind(
-          handler,
-          unknownTitle: () => unknownTitle,
-          unknownArtist: () => unknownArtist,
-        );
       }
       return handler;
     } catch (error, stack) {
@@ -709,7 +715,6 @@ class MusicPlayerRuntime {
     _remoteSession?.dispose();
     _remoteSession = null;
     await _handler?.dispose();
-    await _lastfm?.close();
     try {
       await _initFuture;
     } catch (_) {

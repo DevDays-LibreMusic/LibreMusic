@@ -15,15 +15,15 @@ import 'package:mornye/widgets/preview_button.dart';
 import 'package:mornye/widgets/track_collection_quick_actions.dart';
 import 'package:mornye/widgets/track_listen_button.dart';
 
-/// Track row shared by the album and playlist screens. Tap offers another
-/// download when quality variants are enabled, otherwise it plays the local
-/// copy when one exists and falls back to [onDownload]. Long-press opens the
-/// track options sheet. Callers supply [leading] (track number, cover art,
-/// ...) and choose whether the artist name links to the artist screen.
+/// Track row shared by the album and playlist screens. [onPlay] starts the
+/// collection at this track. Without it, tap offers another download when
+/// quality variants are enabled, plays a local copy, or falls back to
+/// [onDownload]. Long-press opens the track options sheet.
 class TrackListTile extends ConsumerWidget {
   final Track track;
   final bool isInHistory;
   final void Function({bool forceQualityPicker}) onDownload;
+  final VoidCallback? onPlay;
   final Widget leading;
   final bool clickableArtist;
   final bool showQualityBadges;
@@ -40,6 +40,7 @@ class TrackListTile extends ConsumerWidget {
     required this.track,
     required this.isInHistory,
     required this.onDownload,
+    this.onPlay,
     required this.leading,
     this.clickableArtist = false,
     this.showQualityBadges = true,
@@ -151,13 +152,16 @@ class TrackListTile extends ConsumerWidget {
     required bool isQueued,
     required bool isInLocalLibrary,
   }) async {
-    if (isQueued) return;
-
     final settings = ref.read(settingsProvider);
     if (settings.allowQualityVariants && (isInHistory || isInLocalLibrary)) {
       onDownload(forceQualityPicker: true);
       return;
     }
+    if (onPlay != null) {
+      onPlay!();
+      return;
+    }
+    if (isQueued) return;
 
     final playedLocal = await playLocalIfAvailable(context, ref, track);
     if (playedLocal) {
@@ -167,18 +171,17 @@ class TrackListTile extends ConsumerWidget {
     onDownload();
   }
 
-  /// What a tap on the row does, for the desktop song table: offers another
-  /// quality, plays the local copy, or downloads [track].
+  /// What a tap on the row does, for the desktop song table: starts collection
+  /// playback with [onPlay], or offers another quality, plays the local copy,
+  /// or downloads [track].
   static Future<void> activate(
     BuildContext context,
     WidgetRef ref,
     Track track, {
     required bool isInHistory,
     required void Function({bool forceQualityPicker}) onDownload,
+    VoidCallback? onPlay,
   }) async {
-    if (ref.read(downloadQueueLookupProvider).byTrackId.containsKey(track.id)) {
-      return;
-    }
     final settings = ref.read(settingsProvider);
     final isInLocalLibrary =
         settings.localLibraryEnabled &&
@@ -192,6 +195,13 @@ class TrackListTile extends ConsumerWidget {
             );
     if (settings.allowQualityVariants && (isInHistory || isInLocalLibrary)) {
       onDownload(forceQualityPicker: true);
+      return;
+    }
+    if (onPlay != null) {
+      onPlay();
+      return;
+    }
+    if (ref.read(downloadQueueLookupProvider).byTrackId.containsKey(track.id)) {
       return;
     }
     if (await playLocalIfAvailable(context, ref, track)) return;

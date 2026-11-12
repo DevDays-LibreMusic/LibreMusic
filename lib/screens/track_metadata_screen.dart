@@ -1,3 +1,6 @@
+import 'package:mornye/widgets/wave_controls.dart';
+import 'package:mornye/providers/wave_session_provider.dart';
+import 'package:mornye/models/track.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -861,6 +864,25 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen>
               ],
             ),
 
+            SliverToBoxAdapter(
+              child: WaveStartButton(
+                wave: WaveContext(
+                  kind: WaveKind.track,
+                  title: trackName,
+                  artist: artistName,
+                  track: Track(
+                    id: _downloadItem?.spotifyId ?? _itemId,
+                    name: trackName,
+                    artistName: artistName,
+                    albumName: albumName,
+                    duration: duration ?? 0,
+                    isrc: isrc,
+                    coverUrl: _coverUrl,
+                    source: _downloadItem?.service,
+                  ),
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(

@@ -55,7 +55,37 @@ enum DownloadOutcome {
     Final(Value),
 }
 
+fn diagnostic_value(value: &str) -> String {
+    let redacted = crate::redact::preview(value.as_bytes(), 500);
+    let locations =
+        regex::Regex::new(r#"(?i)(?:[a-z][a-z0-9+.-]*://|(?:^|[^a-z0-9])/|[a-z]:[\\/])[^\s\"<>]+"#)
+            .expect("diagnostic locations");
+    locations
+        .replace_all(&redacted, "[location omitted]")
+        .chars()
+        .take(220)
+        .collect()
+}
+
 impl Backend {
+    fn trace_download(&self, request: &DownloadRequest, provider: &str, stage: &str, result: &str) {
+        let message = json!({
+            "itemId": diagnostic_value(&request.item_id),
+            "provider": diagnostic_value(provider),
+            "stage": stage,
+            "source": diagnostic_value(&request.source),
+            "trackId": diagnostic_value(&request.spotify_id),
+            "providerTrackId": diagnostic_value(&request.provider_track_id),
+            "isrc": diagnostic_value(&request.isrc),
+            "durationMs": request.duration_ms,
+            "result": diagnostic_value(result),
+        })
+        .to_string();
+        let _ = self
+            .environment()
+            .log_buffer()
+            .add("DIAG", "PlaybackTrace", &message);
+    }
     /// Go's strategy facade returns a JSON failure, including transport errors
     /// from the extension facade. The latter retains its Result error boundary.
     pub fn download_by_strategy(&self, raw: &str, check: &Check<'_>) -> Result<String, String> {
@@ -299,6 +329,16 @@ impl Backend {
             if !manifest.has_type("download_provider") {
                 continue;
             }
+            self.trace_download(
+                &request,
+                &id,
+                if direct {
+                    "provider_direct"
+                } else {
+                    "provider_match"
+                },
+                &format!("version={}", manifest.version),
+            );
             let account_mode = self
                 .account_download_enabled(&id)
                 .map_err(|error| error.to_string())?;
@@ -316,6 +356,7 @@ impl Backend {
                 match available {
                     Ok(value) => value,
                     Err(error) => {
+                        self.trace_download(&request, &id, "availability_error", &error);
                         let response = failure(&id, &error, "", 0);
                         if account_mode {
                             return Ok(response);
@@ -334,6 +375,17 @@ impl Backend {
                     }
                 }
             };
+            self.trace_download(
+                &request,
+                &id,
+                "availability_result",
+                &format!(
+                    "available={} skip_fallback={} reason={}",
+                    availability["available"],
+                    availability["skip_fallback"],
+                    text(&availability, "reason")
+                ),
+            );
             let stop = availability["skip_fallback"] == true || account_mode;
             if availability["available"] != true {
                 if stop {
@@ -365,12 +417,40 @@ impl Backend {
             if !direct {
                 attempt.output_ext.clear();
             }
-            let outcome =
-                self.download_resolved(&attempt, &manifest, &availability, lease.clone())?;
+            let outcome = self
+                .download_resolved(&attempt, &manifest, &availability, lease.clone())
+                .inspect_err(|error| {
+                    self.trace_download(&attempt, &manifest.name, "provider_error", error);
+                })?;
             check()?;
             let response = match outcome {
-                DownloadOutcome::Final(response) => return Ok(response),
-                DownloadOutcome::Retry(response) => response,
+                DownloadOutcome::Final(response) => {
+                    self.trace_download(
+                        &attempt,
+                        &id,
+                        "provider_result",
+                        &format!(
+                            "success={} error_type={} error={}",
+                            response["success"],
+                            text(&response, "error_type"),
+                            text(&response, "error")
+                        ),
+                    );
+                    return Ok(response);
+                }
+                DownloadOutcome::Retry(response) => {
+                    self.trace_download(
+                        &attempt,
+                        &id,
+                        "provider_result",
+                        &format!(
+                            "success=false error_type={} error={}",
+                            text(&response, "error_type"),
+                            text(&response, "error")
+                        ),
+                    );
+                    response
+                }
             };
             let message = text(&response, "error");
             let kind = text(&response, "error_type");
@@ -489,7 +569,11 @@ impl Backend {
         if !direct {
             attempt.output_ext.clear();
         }
-        let outcome = self.download_resolved(&attempt, &manifest, &availability, lease.clone())?;
+        let outcome = self
+            .download_resolved(&attempt, &manifest, &availability, lease.clone())
+            .inspect_err(|error| {
+                self.trace_download(&attempt, &manifest.name, "provider_error", error);
+            })?;
         lease.check_active().map_err(|error| error.to_string())?;
         let response = match outcome {
             DownloadOutcome::Final(response) => return Ok(Some(response)),
@@ -1093,5 +1177,27 @@ impl Backend {
             }
         }
         check()
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::diagnostic_value;
+    #[test]
+    fn diagnostics_remove_locations_and_secrets() {
+        let value = diagnostic_value(
+            "HTTP403 https://host/private-secret?sig=hidden /storage/emulated/private/file Authorization: Bearer secret api_key=key",
+        );
+        assert!(value.contains("HTTP403"));
+        for forbidden in [
+            "private-secret",
+            "hidden",
+            "emulated",
+            "Bearer secret",
+            "api_key=key",
+        ] {
+            assert!(!value.contains(forbidden));
+        }
+        assert!(diagnostic_value(&"x".repeat(300)).len() <= 220);
     }
 }

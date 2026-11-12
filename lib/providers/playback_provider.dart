@@ -1,13 +1,16 @@
+import 'package:mornye/services/playback_diagnostics.dart';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
+import 'package:mornye/providers/download_playback_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
 import 'package:mornye/services/library_database.dart';
 import 'package:mornye/services/history_database.dart';
 import 'package:mornye/services/download_file_recovery.dart';
+import 'package:mornye/services/download_playback.dart';
 import 'package:mornye/services/music_player_service.dart';
 import 'package:mornye/services/track_file_resolver.dart';
 import 'package:mornye/utils/file_access.dart';
@@ -32,7 +35,9 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   Future<bool> _useInternalPlayer({String? source}) async {
     final mode = ref.read(settingsProvider).playerMode;
-    if (mode != 'internal' && !isRemoteLibraryPath(source)) {
+    if (mode != 'internal' &&
+        !isRemoteLibraryPath(source) &&
+        (source == null || !isDownloadPlaybackSource(source))) {
       return false;
     }
     final initialized =
@@ -162,14 +167,35 @@ class PlaybackController extends Notifier<PlaybackState> {
     }
   }
 
-  Future<void> playTrackList(List<Track> tracks, {int startIndex = 0}) async {
+  Future<void> playTrackList(
+    List<Track> tracks, {
+    int startIndex = 0,
+    String origin = 'collection',
+  }) async {
     if (tracks.isEmpty) return;
 
     final safeStart = startIndex.clamp(0, tracks.length - 1);
+    final trace = PlaybackDiagnostics.begin(origin);
+    for (final track in tracks.skip(safeStart).take(2)) {
+      PlaybackDiagnostics.bindTrack(track, trace);
+      PlaybackDiagnostics.event(
+        'local_lookup',
+        attempt: trace,
+        fields: {
+          'source': track.source ?? '',
+          'trackId': track.id,
+          'isrc': track.isrc ?? '',
+          'duration': track.duration,
+          'title': track.name,
+          'artist': track.artistName,
+          'album': track.albumName,
+        },
+      );
+    }
     List<String?>? resolvedPaths;
     String? networkSource;
+    var skippedCueVirtualTrack = false;
     if (ref.read(settingsProvider).playerMode != 'internal') {
-      var skippedCueVirtualTrack = false;
       // External playback opens one file. Resolve only candidates actually
       // visited, preserving the original forward/wrap fallback order.
       for (var offset = 0; offset < tracks.length; offset++) {
@@ -189,22 +215,24 @@ class PlaybackController extends Notifier<PlaybackState> {
         await openFile(path);
         return;
       }
-      if (resolvedPaths == null) {
-        throw Exception(
-          skippedCueVirtualTrack
-              ? cueVirtualTrackRequiresSplitMessage
-              : 'No local audio file is available to open. Download the track first.',
-        );
-      }
     }
     resolvedPaths ??= await resolveTrackFilePaths(tracks);
+    resolvedPaths = await ref
+        .read(downloadPlaybackProvider)
+        .fillMissingPaths(
+          tracks,
+          resolvedPaths,
+          startIndex: safeStart,
+          attempt: trace,
+          resolveExisting: (track) async =>
+              (await _resolveTrackPaths([track])).single,
+        );
 
     if (await _useInternalPlayer(
       source: networkSource ?? resolvedPaths[safeStart],
     )) {
       final queue = <PlayableMedia>[];
       int? initialIndex;
-      var skippedCueVirtualTrack = false;
       for (var index = 0; index < tracks.length; index++) {
         final track = tracks[index];
         final resolvedPath = resolvedPaths[index];
@@ -234,7 +262,6 @@ class PlaybackController extends Notifier<PlaybackState> {
       );
     }
 
-    var skippedCueVirtualTrack = false;
     for (var offset = 0; offset < tracks.length; offset++) {
       final index = (safeStart + offset) % tracks.length;
       final track = tracks[index];
@@ -266,10 +293,15 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   /// Public wrapper so non-playback features (e.g. M3U export) reuse the
   /// same library+history file resolution.
-  Future<List<String?>> resolveTrackFilePaths(List<Track> tracks) =>
-      _resolveTrackPaths(tracks);
+  Future<List<String?>> resolveTrackFilePaths(
+    List<Track> tracks, {
+    bool strictRecording = false,
+  }) => _resolveTrackPaths(tracks, strictRecording: strictRecording);
 
-  Future<List<String?>> _resolveTrackPaths(List<Track> tracks) async {
+  Future<List<String?>> _resolveTrackPaths(
+    List<Track> tracks, {
+    bool strictRecording = false,
+  }) async {
     if (tracks.isEmpty) return const [];
     final recovery = DownloadFileRecovery(history: _history);
     final (:paths, :missingHistoryIds) = await resolveTrackFiles(
@@ -277,6 +309,7 @@ class PlaybackController extends Notifier<PlaybackState> {
       library: _library,
       history: _history,
       includeLocal: ref.read(settingsProvider).localLibraryEnabled,
+      strictRecording: strictRecording,
       recoverDownload: (source, id) => recovery.recover(
         source,
         historyId: id,

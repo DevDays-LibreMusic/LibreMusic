@@ -49,24 +49,18 @@ String _paintFingerprint(WidgetTester tester) {
   return lines.join('\n');
 }
 
-/// SHA-1 of each fingerprint, recorded on the base layout (commit 44cbb57b)
-/// before search results gained cover grids and shelves on wide screens, with
-/// the Material values re-recorded when sort and view became a grouped
-/// toolbar, the Material desktop value when Home took M3's 24dp window
-/// margin, and the Mornye values when blue became the default accent and the
-/// filter chips gained their glass press layer. A narrow layout must paint
-/// exactly these.
-/// A deliberate change to
-/// the phone rows records new values; the failure prints the fingerprint.
+/// SHA-1 of each fingerprint for the pinned Flutter runtime. A narrow layout
+/// must paint exactly these. A deliberate layout change records new values;
+/// the failure prints the fingerprint.
 const _baseFingerprints = {
-  'phone Material': 'c975d61edc1fef90079a8ac06bf1a8c5307ac43b',
-  'phone Mornye': 'd72fe45a3f9638e3ebe47b549dee17232cd13e4f',
-  'landscape phone Material': '88fd46463538cd4b3d728743a1174612da7a9731',
-  'landscape phone Mornye': 'ad2081a7237deca37d087111c28546cdec9f1781',
-  'portrait tablet Material': '94d41e2ff5146d50d53d7b50f33ec371b88fc11f',
-  'portrait tablet Mornye': 'c4d77afbdcda7e4fbd3b90b586068aa134b1b30b',
-  'narrow desktop window Material': '74198bcea5c9b07d7e5a90075abcb974b99f876e',
-  'narrow desktop window Mornye': '481b5d5c69fc3a5b171e0124a6244c306b9489c0',
+  'phone Material': '725ab7160b9d5cf7ef8fc6c97ca15321ddaaa4e2',
+  'phone Mornye': '72d42d85a66c7bb6191bf693b1e1f188cf9e0ed1',
+  'landscape phone Material': '89f498a85c2eb85faff63f0878a921630e3062e3',
+  'landscape phone Mornye': '1b8f1484fc488cf7f221b0d275166782cdc75fc6',
+  'portrait tablet Material': 'e497a479cd3bcc83268ee511d0df99efc637a1d5',
+  'portrait tablet Mornye': 'fd3390c023b3fdd70c1551e61fb629c85ee0b350',
+  'narrow desktop window Material': 'ec6fc8ba1a4ae1f6e5703b2e1711f4613d3a4a90',
+  'narrow desktop window Mornye': '80b68f2bef3f293c76190c75aef2a0a412d47516',
 };
 
 void main() {

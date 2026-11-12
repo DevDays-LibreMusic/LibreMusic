@@ -15,6 +15,32 @@ Map<String, dynamic> _media(int index, {String? artwork, String? source}) =>
 
 void main() {
   test(
+    'restored transient downloads recover stable identity or are omitted',
+    () async {
+      final result = await prepareRestoredPlaybackMedia(
+        [
+          _media(0, source: 'mornye-download:old-session-1'),
+          _media(1, source: 'mornye-download:old-session-2'),
+          _media(2),
+        ],
+        fileExists: (path) async => path == '/music/2.flac',
+        recoverSource: (media) async {
+          if (media.id == '0') return 'content://music/completed';
+          throw StateError('Storage unavailable');
+        },
+        loadLibraryCoverPath: (_) async => null,
+      );
+      expect(result.items.map((media) => media.id), ['0', '2']);
+      expect(result.items.map((media) => media.source), [
+        'content://music/completed',
+        '/music/2.flac',
+      ]);
+      expect(result.keptOriginalIndices, [0, 2]);
+      expect(result.sourceRelocated, isTrue);
+    },
+  );
+
+  test(
     'an unavailable new folder does not abort restore of other songs',
     () async {
       final result = await prepareRestoredPlaybackMedia(

@@ -43,13 +43,13 @@ final _savedSession = jsonEncode({
 });
 
 class _LocalQueue extends DownloadQueueNotifier {
-  int builds = 0;
+  int _builds = 0;
   final requests = <Track>[];
   final qualities = <String?>[];
 
   @override
   DownloadQueueState build() {
-    builds++;
+    _builds++;
     return const DownloadQueueState();
   }
 
@@ -150,7 +150,7 @@ class _Server {
 
 class _Library extends LocalLibraryNotifier {
   final items = <String, LocalLibraryItem>{};
-  bool failSave = false;
+  bool _failSave = false;
 
   @override
   LocalLibraryState build() => LocalLibraryState();
@@ -163,7 +163,7 @@ class _Library extends LocalLibraryNotifier {
     LocalLibraryItem item, {
     required String displayName,
   }) async {
-    if (failSave) throw StateError('Library unavailable');
+    if (_failSave) throw StateError('Library unavailable');
     items[item.id] = item;
     state = state.copyWith(loadedIndexVersion: state.loadedIndexVersion + 1);
   }
@@ -323,7 +323,7 @@ void main() {
         expect(saved.trackName, _track.name);
         expect(saved.albumName, _track.albumName);
         expect(saved.duration, _track.duration);
-        expect(queue.builds, 0);
+        expect(queue._builds, 0);
         expect(player.played, isEmpty);
         expect(
           find.byTooltip('In library', skipOffstage: false),
@@ -355,7 +355,7 @@ void main() {
     await _pumpServer(tester);
     expect(library.items.values.single.filePath, client.source('a' * 64));
     expect(find.byTooltip('In library'), findsOneWidget);
-    expect(queue.builds, 0);
+    expect(queue._builds, 0);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -363,7 +363,7 @@ void main() {
     tester,
   ) async {
     final server = _Server(ready: true);
-    final library = _Library()..failSave = true;
+    final library = _Library().._failSave = true;
     final queue = _LocalQueue();
     final client = MusicServerClient(
       client: MockClient(server.respond),
@@ -378,8 +378,8 @@ void main() {
       find.text('Could not add the track to the library. Try again.'),
       findsOneWidget,
     );
-    expect(queue.builds, 0);
-    library.failSave = false;
+    expect(queue._builds, 0);
+    library._failSave = false;
     final add = find.byTooltip('Add to library (streaming)');
     await tester.ensureVisible(add);
     await tester.tap(add);
@@ -401,7 +401,7 @@ void main() {
     );
     await _showActions(tester, client, queue);
     await _pumpServer(tester);
-    expect(queue.builds, 0);
+    expect(queue._builds, 0);
     expect(server.requests, isEmpty);
 
     restored.complete(_savedSession);
@@ -422,7 +422,7 @@ void main() {
       'title': _track.name,
       'artist': _track.artistName,
     });
-    expect(queue.builds, 0);
+    expect(queue._builds, 0);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -445,7 +445,7 @@ void main() {
       );
       await _showActions(tester, client, queue);
       await _pumpServer(tester);
-      expect(queue.builds, 0);
+      expect(queue._builds, 0);
       expect(
         server.preparations,
         hasLength(scenario == 'server error' ? 1 : 0),
@@ -508,7 +508,7 @@ void main() {
     await _showActions(tester, client, queue);
     await _pumpServer(tester);
     expect(find.byType(MusicServerScreen), findsOneWidget);
-    expect(queue.builds, 0);
+    expect(queue._builds, 0);
     expect(server.requests, isEmpty);
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), 'https://music.example.org');
@@ -521,7 +521,7 @@ void main() {
         jsonDecode(server.preparations.single.body) as Map<String, dynamic>;
     final source = prepared['source'] as Map<String, dynamic>;
     expect(source['track_id'], _track.id);
-    expect(queue.builds, 0);
+    expect(queue._builds, 0);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

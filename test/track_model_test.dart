@@ -3,6 +3,39 @@ import 'package:mornye/models/track.dart';
 
 void main() {
   group('Track', () {
+    test(
+      'shared metadata mapper preserves source-native identity and Deezer cross-id',
+      () {
+        final payload = <String, dynamic>{
+          'id': '123',
+          'spotify_id': 'legacy',
+          'name': 'Второй эшелон',
+          'artists': 'Гражданская Оборона',
+          'isrc': 'RU1234567890',
+          'duration_ms': 210000,
+          'explicit': true,
+          'album_name': 'Album',
+        };
+        final track = Track.fromBackendMap(payload, source: 'deezer');
+        expect(track.id, '123');
+        expect(track.source, 'deezer');
+        expect(track.deezerId, '123');
+        expect(track.isrc, 'RU1234567890');
+        expect(track.duration, 210);
+        expect(track.explicit, true);
+        expect(
+          Track.fromBackendMap(payload, source: 'another').deezerId,
+          isNull,
+        );
+        expect(
+          Track.fromBackendMap({
+            ...payload,
+            'deezer_id': '456',
+          }, source: 'another').deezerId,
+          '456',
+        );
+      },
+    );
     test('preserves a generic extension explicit flag', () {
       final track = Track.fromBackendMap({
         'id': 'extension-track-1',

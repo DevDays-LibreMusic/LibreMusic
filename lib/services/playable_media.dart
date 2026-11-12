@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:audio_service/audio_service.dart' show MediaItem;
 import 'package:mornye/models/download_history.dart';
 import 'package:mornye/models/library_database_models.dart';
@@ -28,6 +30,8 @@ class PlayableMedia {
   final String? genre;
   final bool autoplay;
   final Map<String, dynamic> displayMetadata;
+  final String? waveSessionKey;
+  final Track? catalogTrack;
 
   const PlayableMedia({
     required this.id,
@@ -47,7 +51,33 @@ class PlayableMedia {
     this.genre,
     this.autoplay = false,
     this.displayMetadata = const {},
+    this.waveSessionKey,
+    this.catalogTrack,
   });
+
+  PlayableMedia withWaveSession(String key, {Track? track}) => PlayableMedia(
+    id: id,
+    source: source,
+    originSource: originSource,
+    displayMetadata: displayMetadata,
+    title: title,
+    artist: artist,
+    album: album,
+    artUri: track?.coverUrl?.trim().isNotEmpty == true
+        ? normalizeArtUri(track!.coverUrl!)
+        : artUri,
+    networkArtworkSource: networkArtworkSource,
+    duration: duration,
+    bitDepth: bitDepth,
+    sampleRate: sampleRate,
+    bitrate: bitrate,
+    format: format,
+    explicit: explicit,
+    genre: genre,
+    autoplay: autoplay,
+    waveSessionKey: key.trim().isEmpty ? null : key,
+    catalogTrack: track ?? catalogTrack,
+  );
 
   /// The `network://` cover the cover store keeps for this song:
   /// [networkArtworkSource], or [artUri] when it names one, as a cover
@@ -83,6 +113,8 @@ class PlayableMedia {
     if (genre != null) 'genre': genre,
     if (autoplay) 'autoplay': true,
     if (displayMetadata.isNotEmpty) 'displayMetadata': displayMetadata,
+    if (waveSessionKey != null) 'waveSessionKey': waveSessionKey,
+    if (catalogTrack != null) 'catalogTrack': catalogTrack!.toJson(),
   };
 
   static PlayableMedia? fromJson(
@@ -128,6 +160,15 @@ class PlayableMedia {
       genre: json['genre'] as String?,
       autoplay: json['autoplay'] == true,
       displayMetadata: playbackDisplayMetadata(json['displayMetadata']),
+      waveSessionKey:
+          (json['waveSessionKey'] as String?)?.trim().isNotEmpty == true
+          ? json['waveSessionKey'] as String
+          : null,
+      catalogTrack: json['catalogTrack'] is Map
+          ? Track.fromJson(
+              Map<String, dynamic>.from(json['catalogTrack'] as Map),
+            )
+          : null,
     );
   }
 
@@ -181,6 +222,9 @@ class PlayableMedia {
           'format': format!.trim(),
         if (explicit) 'explicit': true,
         if (autoplay) 'autoplay': true,
+        if (waveSessionKey != null) 'waveSessionKey': waveSessionKey,
+        if (catalogTrack != null)
+          'catalogTrack': jsonEncode(catalogTrack!.toJson()),
       },
     );
   }
@@ -207,6 +251,7 @@ PlayableMedia playableFromTrack(Track track, String path) {
   return PlayableMedia(
     id: path,
     source: path,
+    catalogTrack: track,
     title: track.name,
     artist: track.artistName,
     album: track.albumName,

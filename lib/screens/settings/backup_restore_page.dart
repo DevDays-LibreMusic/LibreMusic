@@ -130,39 +130,47 @@ class _BackupRestorePageState extends ConsumerState<BackupRestorePage> {
       return;
     }
 
+    final profileNotifier = bundle.profile != null
+        ? ref.read(userProfileProvider.notifier)
+        : null;
+    final settingsNotifier = bundle.hasSettings
+        ? ref.read(settingsProvider.notifier)
+        : null;
+    final historyNotifier = bundle.hasHistory
+        ? ref.read(downloadHistoryProvider.notifier)
+        : null;
+    final collectionsNotifier = bundle.hasCollections
+        ? ref.read(libraryCollectionsProvider.notifier)
+        : null;
+    final extensionNotifier = bundle.hasExtensions
+        ? ref.read(extensionProvider.notifier)
+        : null;
+
     setState(() => _isImporting = true);
     try {
       if (bundle.profile != null) {
-        await ref
-            .read(userProfileProvider.notifier)
-            .restoreFromBackup(bundle.profile!);
+        await profileNotifier!.restoreFromBackup(bundle.profile!);
       }
       if (bundle.hasSettings) {
-        await ref
-            .read(settingsProvider.notifier)
-            .restoreFromBackup(bundle.settings!);
+        await settingsNotifier!.restoreFromBackup(bundle.settings!);
       }
       if (bundle.hasHistory) {
-        await ref
-            .read(downloadHistoryProvider.notifier)
-            .restoreFromBackupOperation(
-              () => BackupService.restoreHistory(bundle!),
-            );
+        await historyNotifier!.restoreFromBackupOperation(
+          () => BackupService.restoreHistory(bundle!),
+        );
       }
       if (bundle.hasCollections) {
-        await ref
-            .read(libraryCollectionsProvider.notifier)
-            .restoreFromBackup(
-              bundle.collections,
-              coverImages: bundle.playlistCovers,
-            );
+        await collectionsNotifier!.restoreFromBackup(
+          bundle.collections,
+          coverImages: bundle.playlistCovers,
+        );
       }
 
       ExtensionRestoreResult? extResult;
       if (bundle.hasExtensions) {
-        extResult = await ref
-            .read(extensionProvider.notifier)
-            .restoreFromBackup(bundle.extensions);
+        extResult = await extensionNotifier!.restoreFromBackup(
+          bundle.extensions,
+        );
       }
 
       final message = StringBuffer(l10n.backupRestored)

@@ -126,7 +126,7 @@ flowchart TB
 | Расширения | Установка, настройки, хранение, запуск через backend | `lib/providers/extension*`, `extension_storage_service.dart`, Rust extensions |
 | Связь устройств | Mornye Link, remote playback, синхронизация | `lib/services/link/`, `remote_*.dart` |
 | Cast | Выбор устройства, remote playback deck, управление сессией | `cast_output.dart`, `cast_playback_deck.dart`, Rust cast |
-| Интеграции | Last.fm, Discord presence, системные media controls, виджеты | `lastfm/`, `discord_*.dart`, `media_session_*.dart`, `player_widget_service.dart` |
+| Интеграции | Last.fm, Discord presence, системные media controls, виджеты | `lastfm_account_*.dart`, `wave_listening_observer.dart`, `discord_*.dart`, `media_session_*.dart`, `player_widget_service.dart` |
 | Обслуживание | Backup/restore, очистка кэша, диагностика, обновления | `backup_service.dart`, `cache_maintenance_service.dart`, `update_checker.dart`, `desktop_updater.dart` |
 
 Пути с одним именем файла в таблице находятся в `lib/services/`, если не указано иначе.
@@ -519,11 +519,11 @@ flowchart LR
 4. **Расширения и lyrics providers.** Определить доступные пользователю источники. Код расширений и их серверы не появляются автоматически вместе с форком приложения.
 5. **Signing.** Собственные Android keystore, Apple signing/provisioning и Windows signing. Не использовать чужую релизную идентичность.
 6. **CI secrets.** Настраивать только нужные для выбранных сборок: `KEYSTORE_BASE64`, `KEY_ALIAS`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`; Discord SDK passphrase при соответствующем режиме; macOS signing credentials; SignPath при использовании этого сервиса.
-7. **Last.fm.** Для desktop интеграции нужны собственные `LASTFM_API_KEY` и `LASTFM_API_SECRET`, передаваемые при сборке. Пользовательская сессия хранится отдельно в secure storage.
+7. **Last.fm.** Для интеграции нужны собственные `LASTFM_API_KEY` и `LASTFM_API_SECRET`, передаваемые при сборке. Пользовательская сессия хранится отдельно в secure storage.
 8. **Публикация.** Проверить workflow на адреса upstream, desktop release token и Telegram-уведомления. Их наличие в YAML не означает, что они готовы работать в новом GitHub-репозитории.
 9. **Версии и лицензии.** Согласовать `pubspec.yaml`, `AppInfo`, релизный tag и platform metadata. Сохранить LICENSE, COPYING, NOTICE и лицензии bundled dependencies.
 
-Эти пункты являются планом подготовки самостоятельного продукта. В текущей задаче код, адреса и workflows не изменялись.
+Эти пункты являются планом подготовки самостоятельного продукта; перед публикацией нужно проверить фактическую конфигурацию выбранной сборки.
 
 ## 11. Проверка и диагностика
 

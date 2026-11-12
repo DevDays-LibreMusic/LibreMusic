@@ -1,3 +1,4 @@
+import 'package:mornye/widgets/wave_controls.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -206,6 +207,22 @@ class _SettingsTabState extends ConsumerState<SettingsTab> {
       ),
       _Group(
         destinations: [
+          _Destination(
+            icon: Icons.waves_rounded,
+            iconColor: Colors.indigo,
+            title: waveText(
+              context,
+              'Моя волна и Last.fm',
+              'My wave and Last.fm',
+            ),
+            subtitle: waveText(
+              context,
+              'Подбор музыки, аккаунт и кэш',
+              'Recommendations, account and cache',
+            ),
+            keywords: const ['lastfm', 'last.fm', 'wave', 'волна', 'scrobble'],
+            pageBuilder: () => const WaveSettingsPage(),
+          ),
           _Destination(
             icon: Icons.palette_outlined,
             iconColor: Colors.purple,

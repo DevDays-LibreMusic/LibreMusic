@@ -25,6 +25,7 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       ios: ${{ steps.filter.outputs.ios }}
       rust: ${{ steps.filter.outputs.rust }}
+      delivery: ${{ steps.filter.outputs.delivery }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,6 +35,16 @@ jobs:
         id: filter
         with:
           filters: |
+            delivery:
+              - 'scripts/deliver_android_debug.py'
+              - 'scripts/test_deliver_android_debug.py'
+              - 'scripts/check_local_changes.py'
+              - 'scripts/test_check_local_changes.py'
+              - 'scripts/build_android.sh'
+              - 'scripts/test_build_android.py'
+              - 'scripts/check_backend_apk.py'
+              - 'scripts/test_check_backend_apk.py'
+              - '.github/workflows/ci.yml'
             dart:
               - 'third_party/audio_service/**'
               - 'third_party/mornye_discord/**'
@@ -106,6 +117,17 @@ jobs:
               - 'l10n.yaml'
               - '.fvmrc'
               - '.github/workflows/ci.yml'
+
+  delivery:
+    name: Local Android delivery safeguards
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.delivery == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test delivery and APK audits without building Android
+        run: python3 scripts/check_local_changes.py --run build
 
   flutter:
     name: Flutter analyze & test

@@ -335,6 +335,9 @@ void main() {
     tester,
   ) async {
     await pumpLibrary(tester, desktop: true);
+    // Leave room for the complete menu below the Library history header.
+    tester.view.physicalSize = const Size(1280, 1200);
+    await tester.pump();
     final l10n = l10nOf(tester);
     final sort = toolButton(null, label: l10n.libraryFilterSortLatest);
     final sortRect = tester.getRect(sort);

@@ -818,21 +818,34 @@ void main() {
           started.add(name);
           return (releases[name] = Completer<void>()).future;
         };
-      final handler = requests(
-        client,
-        FakeLibraryRows([for (final path in paths) linkLocalRow(path)]),
-      );
+      final admitted = <String>[];
+      final handler = LinkPhoneFileRequests(
+        client: client,
+        library: FakeLibraryRows([
+          for (final path in paths) linkLocalRow(path),
+        ]).library(),
+        files: LinkPhoneFiles(),
+        offered: (name) {
+          // Admission is synchronous and FIFO. File lookup/stat and upload
+          // preparation then run concurrently and may finish in either order.
+          admitted.add(name);
+          return null;
+        },
+      )..start();
+      addTearDown(handler.dispose);
 
       for (final name in [...names, names.first, names.last]) {
         client.push({'type': LinkMessageTypes.filesRequest, 'name': name});
       }
       await until(() => started.length == 2);
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      expect(started, names.take(2));
+      expect(admitted, names.take(2));
+      expect(started, unorderedEquals(names.take(2)));
 
       releases[names.first]!.complete();
       await until(() => started.length == 3);
-      expect(started, names);
+      expect(admitted, names);
+      expect(started.take(2), unorderedEquals(names.take(2)));
+      expect(started.last, names.last);
       releases[names[1]]!.complete();
       releases[names[2]]!.complete();
       await until(() => client.uploads.length == 3);
@@ -841,6 +854,8 @@ void main() {
       // A finished song can be asked for again.
       client.push({'type': LinkMessageTypes.filesRequest, 'name': names[0]});
       await until(() => started.length == 4);
+      expect(admitted, [...names, names.first]);
+      expect(started.last, names.first);
       releases[names[0]]!.complete();
       await until(() => client.uploads.length == 4);
       handler.dispose();

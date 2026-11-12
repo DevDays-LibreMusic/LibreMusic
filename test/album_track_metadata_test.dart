@@ -342,7 +342,7 @@ void main() {
     const channel = MethodChannel('com.zarz.mornye/backend');
     const payload = <String, dynamic>{
       'id': 'song-1',
-      'spotify_id': 'song-1',
+      'spotify_id': 'legacy-spotify-id',
       'name': 'Example Song',
       'artists': 'Example Artist',
       'album_name': 'Example Album',
@@ -385,7 +385,10 @@ void main() {
           .setMockMethodCallHandler(channel, null);
     });
 
-    final searchTrack = Track.fromBackendMap(payload);
+    final searchTrack = Track.fromBackendMap(
+      payload,
+      source: 'example-metadata',
+    );
     expect(searchTrack.genre, 'Example Genre');
     expect(searchTrack.label, 'Example Label');
     expect(searchTrack.copyright, 'Example Copyright');
@@ -410,6 +413,9 @@ void main() {
         .widget<TrackListTile>(find.byType(TrackListTile).first)
         .track;
     expect(albumTrack.id, searchTrack.id);
+    expect(albumTrack.source, searchTrack.source);
+    expect(albumTrack.duration, searchTrack.duration);
+    expect(albumTrack.isrc, searchTrack.isrc);
     expect(albumTrack.name, searchTrack.name);
     expect(albumTrack.genre, searchTrack.genre);
     expect(albumTrack.label, searchTrack.label);

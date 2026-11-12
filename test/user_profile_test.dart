@@ -254,6 +254,9 @@ void main() {
       expect(find.text('Listener'), findsOneWidget);
       expect(container.read(userProfileProvider).value?.name, 'Listener');
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
     },
   );
 
@@ -292,6 +295,9 @@ void main() {
     // The detail pane still shows the profile page, not an empty pane.
     expect(find.text('Save'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump();
   });
 
   testWidgets('Home avatar opens Settings and reflects the saved name', (

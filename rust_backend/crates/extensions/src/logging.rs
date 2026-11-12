@@ -68,7 +68,7 @@ impl LogBuffer {
         let _output = self.1.lock().expect("log output lock");
         let mut state = self.0.lock().expect("log buffer lock");
         state.check()?;
-        if !state.enabled && level != "ERROR" && level != "FATAL" {
+        if !state.enabled && level != "ERROR" && level != "FATAL" && level != "DIAG" {
             return Ok(());
         }
         let message = message();
@@ -230,6 +230,16 @@ fn trim_bytes(bytes: &[u8]) -> &[u8] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn diagnostics_survive_disabled_verbose_logging() {
+        let logs = LogBuffer::default();
+        logs.add("DIAG", "PlaybackTrace", "itemId=one stage=provider_result")
+            .unwrap();
+        assert_eq!(logs.count().unwrap(), 1);
+        logs.add("INFO", "Other", "not retained").unwrap();
+        assert_eq!(logs.count().unwrap(), 1);
+    }
 
     #[test]
     fn disabled_messages_skip_conversion_but_errors_and_closed_state_are_preserved() {
