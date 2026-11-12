@@ -446,6 +446,7 @@ class _DesktopMenuBarState extends ConsumerState<_DesktopMenuBar> {
     final state = widget.state;
     String tabLabel(ShellTab tab) => switch (tab) {
       ShellTab.home => l10n.navHome,
+      ShellTab.discovery => l10n.discoveryTitle,
       ShellTab.library => l10n.navLibrary,
       ShellTab.repository => l10n.navStore,
       ShellTab.search => l10n.mornyeSearch,
@@ -523,7 +524,7 @@ class _DesktopMenuBarState extends ConsumerState<_DesktopMenuBar> {
               for (var i = 0; i < tabs.length; i++)
                 PlatformMenuItem(
                   label: tabLabel(tabs[i]),
-                  shortcut: i < 5 ? desktopDestinationShortcut(i + 1) : null,
+                  shortcut: desktopDestinationShortcut(i + 1),
                   onSelected: () => state._selectDestination(i + 1),
                 ),
             ],

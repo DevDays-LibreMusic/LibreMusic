@@ -1,0 +1,264 @@
+{
+  "feed": {
+    "entry": [
+      {
+        "im:name": {
+          "label": "Drummer Boy (Original Motion Picture Soundtrack)"
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/35/fe/0a/35fe0aac-055d-4633-5aa0-01b0bde3a954/194646569462.png/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/35/fe/0a/35fe0aac-055d-4633-5aa0-01b0bde3a954/194646569462.png/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/35/fe/0a/35fe0aac-055d-4633-5aa0-01b0bde3a954/194646569462.png/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:itemCount": {
+          "label": "13"
+        },
+        "im:price": {
+          "label": "$11.99",
+          "attributes": {
+            "amount": "11.99",
+            "currency": "USD"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Album",
+              "label": "Album"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "rights": {
+          "label": "℗ 2026 Curb"
+        },
+        "title": {
+          "label": "Drummer Boy (Original Motion Picture Soundtrack) - for KING & COUNTRY & Angel"
+        },
+        "link": {
+          "attributes": {
+            "rel": "alternate",
+            "type": "text/html",
+            "href": "https://music.apple.com/us/album/drummer-boy-original-motion-picture-soundtrack/6819036608?uo=2"
+          }
+        },
+        "id": {
+          "label": "https://music.apple.com/us/album/drummer-boy-original-motion-picture-soundtrack/6819036608?uo=2",
+          "attributes": {
+            "im:id": "6819036608"
+          }
+        },
+        "im:artist": {
+          "label": "for KING & COUNTRY & Angel",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/for-king-country/457871289?uo=2"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "16",
+            "term": "Soundtrack",
+            "scheme": "https://music.apple.com/us/genre/music-soundtrack/id16?uo=2",
+            "label": "Soundtrack"
+          }
+        },
+        "im:releaseDate": {
+          "label": "2026-11-06T00:00:00-07:00",
+          "attributes": {
+            "label": "November 6, 2026"
+          }
+        }
+      },
+      {
+        "im:name": {
+          "label": "O My Beloved (Exclusive Deluxe)"
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/0b/48/3a/0b483a8d-0b76-0722-53d8-9a1dbaabcd22/823375580782_Cover.jpg/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/0b/48/3a/0b483a8d-0b76-0722-53d8-9a1dbaabcd22/823375580782_Cover.jpg/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/0b/48/3a/0b483a8d-0b76-0722-53d8-9a1dbaabcd22/823375580782_Cover.jpg/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:itemCount": {
+          "label": "18"
+        },
+        "im:price": {
+          "label": "$9.99",
+          "attributes": {
+            "amount": "9.99",
+            "currency": "USD"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Album",
+              "label": "Album"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "rights": {
+          "label": "℗ 2026 LoveTap Records, LLC, Distributed by Virgin Music Group"
+        },
+        "title": {
+          "label": "O My Beloved (Exclusive Deluxe) - Kings of Leon"
+        },
+        "link": {
+          "attributes": {
+            "rel": "alternate",
+            "type": "text/html",
+            "href": "https://music.apple.com/us/album/o-my-beloved-exclusive-deluxe/6830889741?uo=2"
+          }
+        },
+        "id": {
+          "label": "https://music.apple.com/us/album/o-my-beloved-exclusive-deluxe/6830889741?uo=2",
+          "attributes": {
+            "im:id": "6830889741"
+          }
+        },
+        "im:artist": {
+          "label": "Kings of Leon",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/kings-of-leon/1883403?uo=2"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "20",
+            "term": "Alternative",
+            "scheme": "https://music.apple.com/us/genre/music-alternative/id20?uo=2",
+            "label": "Alternative"
+          }
+        },
+        "im:releaseDate": {
+          "label": "2026-11-06T00:00:00-07:00",
+          "attributes": {
+            "label": "November 6, 2026"
+          }
+        }
+      },
+      {
+        "im:name": {
+          "label": "Weathered"
+        },
+        "im:image": [
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/6a/6a/e06a6a56-71cb-df21-526b-72b33ef3b43f/14CMGIM00789.rgb.jpg/55x55bb.png",
+            "attributes": {
+              "height": "55"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/6a/6a/e06a6a56-71cb-df21-526b-72b33ef3b43f/14CMGIM00789.rgb.jpg/60x60bb.png",
+            "attributes": {
+              "height": "60"
+            }
+          },
+          {
+            "label": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/6a/6a/e06a6a56-71cb-df21-526b-72b33ef3b43f/14CMGIM00789.rgb.jpg/170x170bb.png",
+            "attributes": {
+              "height": "170"
+            }
+          }
+        ],
+        "im:itemCount": {
+          "label": "11"
+        },
+        "im:price": {
+          "label": "$9.99",
+          "attributes": {
+            "amount": "9.99",
+            "currency": "USD"
+          }
+        },
+        "im:contentType": {
+          "im:contentType": {
+            "attributes": {
+              "term": "Album",
+              "label": "Album"
+            }
+          },
+          "attributes": {
+            "term": "Music",
+            "label": "Music"
+          }
+        },
+        "rights": {
+          "label": "℗ 2001 The Bicycle Music Company"
+        },
+        "title": {
+          "label": "Weathered - Creed"
+        },
+        "link": {
+          "attributes": {
+            "rel": "alternate",
+            "type": "text/html",
+            "href": "https://music.apple.com/us/album/weathered/1440738578?uo=2"
+          }
+        },
+        "id": {
+          "label": "https://music.apple.com/us/album/weathered/1440738578?uo=2",
+          "attributes": {
+            "im:id": "1440738578"
+          }
+        },
+        "im:artist": {
+          "label": "Creed",
+          "attributes": {
+            "href": "https://music.apple.com/us/artist/creed/2861519?uo=2"
+          }
+        },
+        "category": {
+          "attributes": {
+            "im:id": "21",
+            "term": "Rock",
+            "scheme": "https://music.apple.com/us/genre/music-rock/id21?uo=2",
+            "label": "Rock"
+          }
+        },
+        "im:releaseDate": {
+          "label": "2001-01-01T00:00:00-07:00",
+          "attributes": {
+            "label": "January 1, 2001"
+          }
+        }
+      }
+    ]
+  }
+}

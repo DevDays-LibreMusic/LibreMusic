@@ -34,11 +34,11 @@ class KeyboardShortcutsPage extends ConsumerWidget {
     List<SingleActivator> tabKeys(ShellTab tab) => [
       if (tab == ShellTab.search) ...keys(DesktopCommand.search),
       if (tab == ShellTab.settings) ...keys(DesktopCommand.settings),
-      if (tabs.indexOf(tab) < 5)
-        desktopDestinationShortcut(tabs.indexOf(tab) + 1, platform),
+      desktopDestinationShortcut(tabs.indexOf(tab) + 1, platform),
     ];
     String tabLabel(ShellTab tab) => switch (tab) {
       ShellTab.home => l10n.navHome,
+      ShellTab.discovery => l10n.discoveryTitle,
       ShellTab.library => l10n.navLibrary,
       ShellTab.repository => l10n.navStore,
       ShellTab.search => l10n.mornyeSearch,

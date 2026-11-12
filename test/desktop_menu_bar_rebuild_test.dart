@@ -11,6 +11,7 @@ import 'package:mornye/providers/system_volume_provider.dart';
 import 'package:mornye/services/app_navigation_service.dart';
 import 'package:mornye/services/shell_navigation_service.dart';
 import 'package:mornye/theme/app_theme.dart';
+import 'package:mornye/theme/mornye_theme.dart';
 import 'package:mornye/utils/desktop_platform.dart';
 import 'package:mornye/widgets/app_snack_bar.dart';
 import 'package:mornye/widgets/desktop/desktop_player_bar.dart';
@@ -107,23 +108,26 @@ void main() {
     systemVolumeProvider.overrideWith((_) => Stream.value(0.5)),
   ];
 
-  Widget app({ThemeMode themeMode = ThemeMode.light, Locale? locale}) =>
-      ProviderScope(
-        overrides: overrides,
-        child: MaterialApp(
-          navigatorKey: AppNavigationService.rootNavigatorKey,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          themeMode: themeMode,
-          themeAnimationDuration: const Duration(milliseconds: 300),
-          locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          builder: (context, child) =>
-              buildAppContent(context, child, heroAnimationsEnabled: true),
-          home: const Scaffold(body: Text('content')),
-        ),
-      );
+  Widget app({
+    ThemeMode themeMode = ThemeMode.light,
+    Locale? locale,
+    bool mornye = false,
+  }) => ProviderScope(
+    overrides: overrides,
+    child: MaterialApp(
+      navigatorKey: AppNavigationService.rootNavigatorKey,
+      theme: mornye ? MornyeTheme.build(Brightness.light) : AppTheme.light(),
+      darkTheme: mornye ? MornyeTheme.build(Brightness.dark) : AppTheme.dark(),
+      themeMode: themeMode,
+      themeAnimationDuration: const Duration(milliseconds: 300),
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) =>
+          buildAppContent(context, child, heroAnimationsEnabled: true),
+      home: const Scaffold(body: Text('content')),
+    ),
+  );
 
   Future<void> pumpApp(WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 800);
@@ -158,6 +162,24 @@ void main() {
 
   List<PlatformMenuItem> menuItems(WidgetTester tester) =>
       tester.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus;
+
+  testWidgets('Mornye macOS menu includes the sixth destination shortcut', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(mornye: true));
+    await tester.pumpAndSettle();
+    final view = menuItems(tester).whereType<PlatformMenu>().firstWhere(
+      (menu) => menu.label == en.desktopMenuView,
+    );
+    final destinations = (view.menus.first as PlatformMenuItemGroup).members;
+    expect(destinations, hasLength(6));
+    expect(destinations.last.label, en.navSettings);
+    final shortcut = destinations.last.shortcut as SingleActivator?;
+    expect(shortcut, isNotNull);
+    expect(shortcut!.trigger, LogicalKeyboardKey.digit6);
+    expect(shortcut.meta, isTrue);
+    expect(tester.takeException(), isNull);
+  }, variant: _macOS);
 
   Future<void> select(WidgetTester tester, String label) async {
     await messenger.handlePlatformMessage(

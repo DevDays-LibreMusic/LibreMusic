@@ -125,7 +125,7 @@ class DesktopShellLayout extends ConsumerWidget {
     this.nowPlaying = const DesktopNowPlaying(),
   });
 
-  /// Destinations in [desktopDestinationTabs] order; Cmd/Ctrl+1..5 follow it.
+  /// Destinations in [desktopDestinationTabs] order; Cmd/Ctrl+1..6 follow it.
   final List<DesktopDestination> destinations;
   final ShellTab? selected;
   final ValueChanged<ShellTab> onSelected;
@@ -1113,7 +1113,12 @@ class DesktopSidebar extends ConsumerWidget {
 
     // Search leads the list.
     final topLevel = [
-      for (final tab in [ShellTab.search, ShellTab.home, ShellTab.repository])
+      for (final tab in [
+        ShellTab.search,
+        ShellTab.home,
+        ShellTab.discovery,
+        ShellTab.repository,
+      ])
         ...destinations.where((destination) => destination.tab == tab),
       if (links.isEmpty)
         ...destinations.where(

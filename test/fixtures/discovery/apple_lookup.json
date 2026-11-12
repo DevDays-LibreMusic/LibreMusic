@@ -1,0 +1,37 @@
+{
+  "resultCount": 2,
+  "results": [
+    {
+      "wrapperType": "track",
+      "kind": "song",
+      "artistId": 128050210,
+      "collectionId": 6831506152,
+      "trackId": 6831506154,
+      "artistName": "Future",
+      "collectionName": "Ya Hit (feat. Drake, Travis Scott & Loe Shimmy) - Single",
+      "trackName": "Ya Hit (feat. Drake, Travis Scott & Loe Shimmy)",
+      "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/5f/7c/cb/5f7ccb13-1490-5b92-f78b-d1a0f665a07e/196874972953.jpg/100x100bb.jpg",
+      "releaseDate": "2026-11-06T12:00:00Z",
+      "collectionExplicitness": "explicit",
+      "trackExplicitness": "explicit",
+      "discNumber": 1,
+      "trackCount": 1,
+      "trackNumber": 1,
+      "trackTimeMillis": 214000,
+      "primaryGenreName": "Hip-Hop/Rap"
+    },
+    {
+      "wrapperType": "collection",
+      "collectionType": "Album",
+      "artistId": 1276656483,
+      "collectionId": 6823820064,
+      "artistName": "Lil Baby",
+      "collectionName": "FRESH",
+      "artworkUrl100": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a2/df/3c/a2df3c58-fbda-cc45-b349-bad967c1e7a8/26UM1IM31430.rgb.jpg/100x100bb.jpg",
+      "collectionExplicitness": "explicit",
+      "trackCount": 17,
+      "releaseDate": "2026-11-06T08:00:00Z",
+      "primaryGenreName": "Hip-Hop"
+    }
+  ]
+}

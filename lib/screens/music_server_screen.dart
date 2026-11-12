@@ -19,10 +19,16 @@ class MusicServerScreen extends ConsumerStatefulWidget {
   const MusicServerScreen({
     super.key,
     this.initialTrack,
+    this.alternativeTracks = const [],
     this.autoPrepare = false,
     this.addToLibrary = false,
   });
   final Track? initialTrack;
+
+  /// Exact versions of the requested track from other catalog providers.
+  /// Used only when the server has a matching extension; IDs never cross
+  /// provider boundaries and no metadata search can substitute another song.
+  final List<Track> alternativeTracks;
   final bool autoPrepare;
   final bool addToLibrary;
   @override
@@ -56,6 +62,22 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
       0,
       1,
     );
+  }
+
+  Track? _trackForSource(Map<String, dynamic>? source) {
+    if (source?['type'] != 'extension') return null;
+    return [
+          if (widget.initialTrack != null) widget.initialTrack!,
+          ...widget.alternativeTracks,
+        ]
+        .where(
+          (track) =>
+              !track.isAlbumItem &&
+              track.id.isNotEmpty &&
+              track.source?.replaceFirst(RegExp(r'^extension:'), '') ==
+                  source?['provider_id'],
+        )
+        .firstOrNull;
   }
 
   @override
@@ -104,19 +126,13 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
             .cast<Map<String, dynamic>>();
         if (_source == null && _sources.isNotEmpty) {
           final track = widget.initialTrack;
-          final provider = track?.source?.replaceFirst(
-            RegExp(r'^extension:'),
-            '',
-          );
           final matching = _sources
-              .where(
-                (s) => s['type'] == 'extension' && s['provider_id'] == provider,
-              )
+              .where((source) => _trackForSource(source) != null)
               .firstOrNull;
           _source = matching ?? _sources.first;
           _sourceUnavailable = track != null && matching == null;
           if (track != null && matching != null) {
-            _input.text = track.id;
+            _input.text = _trackForSource(matching)!.id;
             if (widget.autoPrepare && !_autoPrepared) {
               _autoPrepared = true;
               prepare = true;
@@ -148,7 +164,12 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
   }
 
   Future<void> _prepare({bool save = false}) async {
-    if (_busy || _source == null || _input.text.trim().isEmpty) return;
+    if (_busy ||
+        _job != null ||
+        _source == null ||
+        _input.text.trim().isEmpty) {
+      return;
+    }
     final generation = ++_generation;
     _timer?.cancel();
     setState(() {
@@ -156,12 +177,8 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
       _failed = false;
       _job = null;
       _addWhenReady = save;
-      final track = widget.initialTrack;
-      _preparedMetadata =
-          track != null &&
-              _source?['provider_id'] ==
-                  track.source?.replaceFirst(RegExp(r'^extension:'), '') &&
-              _input.text.trim() == track.id
+      final track = _trackForSource(_source);
+      _preparedMetadata = track != null && _input.text.trim() == track.id
           ? track
           : null;
     });
@@ -416,6 +433,9 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
                     _source = null;
                     _job = null;
                     _busy = false;
+                    _autoPrepared = false;
+                    _sourceUnavailable = false;
+                    _preparedMetadata = null;
                   });
                 }
               },
@@ -439,7 +459,10 @@ class _MusicServerScreenState extends ConsumerState<MusicServerScreen>
                         _source = _sources.firstWhere((s) => s['id'] == id);
                         _quality =
                             (_source!['qualities'] as List).first as String;
-                        _input.clear();
+                        final track = _trackForSource(_source);
+                        _input.text = track?.id ?? '';
+                        _sourceUnavailable =
+                            widget.initialTrack != null && track == null;
                       }),
               ),
               TextField(
