@@ -1,3 +1,4 @@
+import 'package:mornye/services/audio_source_preference.dart';
 import 'package:mornye/services/playback_diagnostics.dart';
 import 'dart:io';
 
@@ -303,9 +304,23 @@ class PlaybackController extends Notifier<PlaybackState> {
     bool strictRecording = false,
   }) async {
     if (tracks.isEmpty) return const [];
+    final preferred = await Future.wait([
+      for (final track in tracks)
+        track.source == null
+            ? Future<String?>.value(null)
+            : AudioSourcePreference.instance.preferredProviderSource(
+                track.source!,
+                track.id,
+              ),
+    ]);
+    final missing = [
+      for (var i = 0; i < tracks.length; i++)
+        if (preferred[i] == null) i,
+    ];
+    if (missing.isEmpty) return preferred;
     final recovery = DownloadFileRecovery(history: _history);
     final (:paths, :missingHistoryIds) = await resolveTrackFiles(
-      tracks,
+      [for (final index in missing) tracks[index]],
       library: _library,
       history: _history,
       includeLocal: ref.read(settingsProvider).localLibraryEnabled,
@@ -319,7 +334,10 @@ class PlaybackController extends Notifier<PlaybackState> {
     );
     final historyNotifier = ref.read(downloadHistoryProvider.notifier);
     await historyNotifier.removeManyFromHistory(missingHistoryIds);
-    return paths;
+    for (var i = 0; i < missing.length; i++) {
+      preferred[missing[i]] = paths[i];
+    }
+    return preferred;
   }
 }
 

@@ -708,3 +708,16 @@ fn reenrich_cover_and_lyrics_overlap_preserve_best_effort_results_and_cancel() {
         backend.shutdown();
     }
 }
+
+#[test]
+fn recording_provenance_is_host_owned_not_provider_metadata() {
+    let mut result = json!({
+        "resolved_provider_id": "metadata-catalog",
+        "resolved_provider_track_id": "different-recording",
+        "provider_track_id": "display-enriched-id"
+    });
+    set_recording_identity(&mut result, "actual-audio-provider", "requested-item");
+    assert_eq!(result["resolved_provider_id"], "actual-audio-provider");
+    assert_eq!(result["resolved_provider_track_id"], "requested-item");
+    assert_eq!(result["provider_track_id"], "display-enriched-id");
+}

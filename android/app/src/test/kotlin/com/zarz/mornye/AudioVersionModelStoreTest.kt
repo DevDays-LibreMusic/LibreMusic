@@ -61,6 +61,18 @@ class AudioVersionModelStoreTest {
         assertEquals(listOf(store.model.name), store.model.parentFile!!.list()!!.toList())
     }
 
+    @Test fun separatePinnedModelsPublishWithoutReplacingEachOther() {
+        store.import(ByteArrayInputStream(bytes))
+        val demucs = AudioVersionModelStore(File(directory, "models"), bytes.size.toLong(), sha, "htdemucs-trunk-fp32.onnx")
+        demucs.import(ByteArrayInputStream(bytes))
+        assertNotEquals(store.model, demucs.model)
+        assertNotNull(store.verifiedModel())
+        assertNotNull(demucs.verifiedModel())
+        demucs.model.writeBytes(ByteArray(bytes.size))
+        assertNull(demucs.verifiedModel())
+        assertNotNull(store.verifiedModel())
+    }
+
     @Test fun clipBoundaryRejectsOutsideAndPrefixSiblingAndSymlinkEscape() {
         val root = File(directory, "cache").apply { mkdirs() }
         val outside = File(directory, "cache-other").apply { mkdirs() }

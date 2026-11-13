@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/widgets.dart'
     show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:mornye/services/playback_notification.dart';
+import 'package:mornye/services/audio_source_preference.dart';
 import 'package:mornye/services/playback_diagnostics.dart';
 import 'package:audio_session/audio_session.dart'
     show
@@ -1198,6 +1199,21 @@ class MusicPlayerHandler extends BaseAudioHandler
   Future<String?> _resolveSource(PlayableMedia media) async {
     if (_dependencies.sourceDeletionEvents.isDeleting(media.source)) {
       return null;
+    }
+    // Consult only at source selection; a new comparison never changes an
+    // already playing deck. The service validates both complete file hashes.
+    final catalog = media.catalogTrack;
+    final preferred =
+        (catalog?.source != null
+            ? await AudioSourcePreference.instance.preferredProviderSource(
+                catalog!.source!,
+                catalog.id,
+              )
+            : null) ??
+        await AudioSourcePreference.instance.preferredSource(media.source);
+    if (preferred != null &&
+        !_dependencies.sourceDeletionEvents.isDeleting(preferred)) {
+      return preferred;
     }
     if (media.source.startsWith('musicserver://')) {
       // Stable identity is persisted; expiring tickets are resolved per play.

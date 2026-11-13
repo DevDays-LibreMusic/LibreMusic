@@ -1,0 +1,54 @@
+{
+  "frequency": [
+    {
+      "index": 0,
+      "value": 0.0
+    },
+    {
+      "index": 1,
+      "value": 0.0
+    },
+    {
+      "index": 100,
+      "value": 0.0
+    },
+    {
+      "index": 10000,
+      "value": 0.0
+    },
+    {
+      "index": 5505024,
+      "value": 0.0
+    },
+    {
+      "index": 11010047,
+      "value": 0.0
+    }
+  ],
+  "time": [
+    {
+      "index": 0,
+      "value": 0.0
+    },
+    {
+      "index": 1,
+      "value": 0.0
+    },
+    {
+      "index": 100,
+      "value": 0.0
+    },
+    {
+      "index": 10000,
+      "value": 0.0
+    },
+    {
+      "index": 1375920,
+      "value": 0.0
+    },
+    {
+      "index": 2751839,
+      "value": 0.0
+    }
+  ]
+}

@@ -1,0 +1,585 @@
+{
+  "oracle": "NumPy orthonormal FFT, exact HTDemucs reflection/Hann/crop",
+  "spectrum": [
+    {
+      "channel": 0,
+      "frequency": 0,
+      "frame": 0,
+      "value": 0.4142877161502838
+    },
+    {
+      "channel": 0,
+      "frequency": 0,
+      "frame": 1,
+      "value": 0.09209934622049332
+    },
+    {
+      "channel": 0,
+      "frequency": 0,
+      "frame": 127,
+      "value": 0.020185595378279686
+    },
+    {
+      "channel": 0,
+      "frequency": 0,
+      "frame": 335,
+      "value": 0.06537431478500366
+    },
+    {
+      "channel": 0,
+      "frequency": 1,
+      "frame": 0,
+      "value": -0.2707163989543915
+    },
+    {
+      "channel": 0,
+      "frequency": 1,
+      "frame": 1,
+      "value": -0.014806577935814857
+    },
+    {
+      "channel": 0,
+      "frequency": 1,
+      "frame": 127,
+      "value": -0.06944461911916733
+    },
+    {
+      "channel": 0,
+      "frequency": 1,
+      "frame": 335,
+      "value": -0.05723751336336136
+    },
+    {
+      "channel": 0,
+      "frequency": 17,
+      "frame": 0,
+      "value": 0.10270354151725769
+    },
+    {
+      "channel": 0,
+      "frequency": 17,
+      "frame": 1,
+      "value": 0.0007673875661566854
+    },
+    {
+      "channel": 0,
+      "frequency": 17,
+      "frame": 127,
+      "value": 0.011930161155760288
+    },
+    {
+      "channel": 0,
+      "frequency": 17,
+      "frame": 335,
+      "value": 0.00538692157715559
+    },
+    {
+      "channel": 0,
+      "frequency": 1000,
+      "frame": 0,
+      "value": -1.5677607734687626e-05
+    },
+    {
+      "channel": 0,
+      "frequency": 1000,
+      "frame": 1,
+      "value": 8.962070569396019e-05
+    },
+    {
+      "channel": 0,
+      "frequency": 1000,
+      "frame": 127,
+      "value": -0.00015382350829895586
+    },
+    {
+      "channel": 0,
+      "frequency": 1000,
+      "frame": 335,
+      "value": 8.368968701688573e-05
+    },
+    {
+      "channel": 0,
+      "frequency": 2047,
+      "frame": 0,
+      "value": 3.072619438171387e-05
+    },
+    {
+      "channel": 0,
+      "frequency": 2047,
+      "frame": 1,
+      "value": -0.00011177267879247665
+    },
+    {
+      "channel": 0,
+      "frequency": 2047,
+      "frame": 127,
+      "value": -0.0001115649938583374
+    },
+    {
+      "channel": 0,
+      "frequency": 2047,
+      "frame": 335,
+      "value": -3.214925527572632e-06
+    },
+    {
+      "channel": 1,
+      "frequency": 0,
+      "frame": 0,
+      "value": 0.0
+    },
+    {
+      "channel": 1,
+      "frequency": 0,
+      "frame": 1,
+      "value": 0.0
+    },
+    {
+      "channel": 1,
+      "frequency": 0,
+      "frame": 127,
+      "value": 0.0
+    },
+    {
+      "channel": 1,
+      "frequency": 0,
+      "frame": 335,
+      "value": 0.0
+    },
+    {
+      "channel": 1,
+      "frequency": 1,
+      "frame": 0,
+      "value": -0.2338954657316208
+    },
+    {
+      "channel": 1,
+      "frequency": 1,
+      "frame": 1,
+      "value": -0.0865442156791687
+    },
+    {
+      "channel": 1,
+      "frequency": 1,
+      "frame": 127,
+      "value": -0.04202955216169357
+    },
+    {
+      "channel": 1,
+      "frequency": 1,
+      "frame": 335,
+      "value": 0.09420663118362427
+    },
+    {
+      "channel": 1,
+      "frequency": 17,
+      "frame": 0,
+      "value": 0.0883738100528717
+    },
+    {
+      "channel": 1,
+      "frequency": 17,
+      "frame": 1,
+      "value": 0.018581004813313484
+    },
+    {
+      "channel": 1,
+      "frequency": 17,
+      "frame": 127,
+      "value": -0.0017748276004567742
+    },
+    {
+      "channel": 1,
+      "frequency": 17,
+      "frame": 335,
+      "value": 0.03898628056049347
+    },
+    {
+      "channel": 1,
+      "frequency": 1000,
+      "frame": 0,
+      "value": 3.783039574045688e-05
+    },
+    {
+      "channel": 1,
+      "frequency": 1000,
+      "frame": 1,
+      "value": 0.00017677992582321167
+    },
+    {
+      "channel": 1,
+      "frequency": 1000,
+      "frame": 127,
+      "value": -0.00013112646411173046
+    },
+    {
+      "channel": 1,
+      "frequency": 1000,
+      "frame": 335,
+      "value": 9.687287092674524e-05
+    },
+    {
+      "channel": 1,
+      "frequency": 2047,
+      "frame": 0,
+      "value": -3.573298454284668e-05
+    },
+    {
+      "channel": 1,
+      "frequency": 2047,
+      "frame": 1,
+      "value": -8.837506175041199e-05
+    },
+    {
+      "channel": 1,
+      "frequency": 2047,
+      "frame": 127,
+      "value": -8.502043783664703e-05
+    },
+    {
+      "channel": 1,
+      "frequency": 2047,
+      "frame": 335,
+      "value": -8.518993854522705e-05
+    },
+    {
+      "channel": 2,
+      "frequency": 0,
+      "frame": 0,
+      "value": 8.225002966355532e-05
+    },
+    {
+      "channel": 2,
+      "frequency": 0,
+      "frame": 1,
+      "value": -0.00021553982514888048
+    },
+    {
+      "channel": 2,
+      "frequency": 0,
+      "frame": 127,
+      "value": 0.00025849530356936157
+    },
+    {
+      "channel": 2,
+      "frequency": 0,
+      "frame": 335,
+      "value": 0.12075401842594147
+    },
+    {
+      "channel": 2,
+      "frequency": 1,
+      "frame": 0,
+      "value": 8.386838453589007e-05
+    },
+    {
+      "channel": 2,
+      "frequency": 1,
+      "frame": 1,
+      "value": -0.0002197603025706485
+    },
+    {
+      "channel": 2,
+      "frequency": 1,
+      "frame": 127,
+      "value": 0.00026355095906183124
+    },
+    {
+      "channel": 2,
+      "frequency": 1,
+      "frame": 335,
+      "value": -0.0956934243440628
+    },
+    {
+      "channel": 2,
+      "frequency": 17,
+      "frame": 0,
+      "value": -0.582290768623352
+    },
+    {
+      "channel": 2,
+      "frequency": 17,
+      "frame": 1,
+      "value": 1.5258135795593262
+    },
+    {
+      "channel": 2,
+      "frequency": 17,
+      "frame": 127,
+      "value": -1.8299157619476318
+    },
+    {
+      "channel": 2,
+      "frequency": 17,
+      "frame": 335,
+      "value": -0.37423819303512573
+    },
+    {
+      "channel": 2,
+      "frequency": 1000,
+      "frame": 0,
+      "value": -4.94765117764473e-10
+    },
+    {
+      "channel": 2,
+      "frequency": 1000,
+      "frame": 1,
+      "value": 2.0372681319713593e-09
+    },
+    {
+      "channel": 2,
+      "frequency": 1000,
+      "frame": 127,
+      "value": -3.987224772572517e-09
+    },
+    {
+      "channel": 2,
+      "frequency": 1000,
+      "frame": 335,
+      "value": -5.767215043306351e-07
+    },
+    {
+      "channel": 2,
+      "frequency": 2047,
+      "frame": 0,
+      "value": -3.6307028494775295e-09
+    },
+    {
+      "channel": 2,
+      "frequency": 2047,
+      "frame": 1,
+      "value": 1.0186340659856796e-10
+    },
+    {
+      "channel": 2,
+      "frequency": 2047,
+      "frame": 127,
+      "value": -2.4301698431372643e-09
+    },
+    {
+      "channel": 2,
+      "frequency": 2047,
+      "frame": 335,
+      "value": -1.7415732145309448e-05
+    },
+    {
+      "channel": 3,
+      "frequency": 0,
+      "frame": 0,
+      "value": 0.0
+    },
+    {
+      "channel": 3,
+      "frequency": 0,
+      "frame": 1,
+      "value": 0.0
+    },
+    {
+      "channel": 3,
+      "frequency": 0,
+      "frame": 127,
+      "value": 0.0
+    },
+    {
+      "channel": 3,
+      "frequency": 0,
+      "frame": 335,
+      "value": 0.0
+    },
+    {
+      "channel": 3,
+      "frequency": 1,
+      "frame": 0,
+      "value": 4.3844294850714505e-05
+    },
+    {
+      "channel": 3,
+      "frequency": 1,
+      "frame": 1,
+      "value": -2.719026269915048e-05
+    },
+    {
+      "channel": 3,
+      "frequency": 1,
+      "frame": 127,
+      "value": 1.1529100447660312e-05
+    },
+    {
+      "channel": 3,
+      "frequency": 1,
+      "frame": 335,
+      "value": 0.07397311925888062
+    },
+    {
+      "channel": 3,
+      "frequency": 17,
+      "frame": 0,
+      "value": -1.7982094287872314
+    },
+    {
+      "channel": 3,
+      "frequency": 17,
+      "frame": 1,
+      "value": 1.115544319152832
+    },
+    {
+      "channel": 3,
+      "frequency": 17,
+      "frame": 127,
+      "value": -0.47319847345352173
+    },
+    {
+      "channel": 3,
+      "frequency": 17,
+      "frame": 335,
+      "value": -2.0908315181732178
+    },
+    {
+      "channel": 3,
+      "frequency": 1000,
+      "frame": 0,
+      "value": -3.3760443329811096e-09
+    },
+    {
+      "channel": 3,
+      "frequency": 1000,
+      "frame": 1,
+      "value": 2.735760062932968e-09
+    },
+    {
+      "channel": 3,
+      "frequency": 1000,
+      "frame": 127,
+      "value": -5.675246939063072e-10
+    },
+    {
+      "channel": 3,
+      "frequency": 1000,
+      "frame": 335,
+      "value": 4.559755325317383e-05
+    },
+    {
+      "channel": 3,
+      "frequency": 2047,
+      "frame": 0,
+      "value": -4.800313035957515e-09
+    },
+    {
+      "channel": 3,
+      "frequency": 2047,
+      "frame": 1,
+      "value": -2.406522980891168e-09
+    },
+    {
+      "channel": 3,
+      "frequency": 2047,
+      "frame": 127,
+      "value": 4.706180334324017e-09
+    },
+    {
+      "channel": 3,
+      "frequency": 2047,
+      "frame": 335,
+      "value": -1.3377517461776733e-05
+    }
+  ],
+  "inverse": [
+    {
+      "channel": 0,
+      "sample": 0,
+      "value": -0.002635752083733678
+    },
+    {
+      "channel": 0,
+      "sample": 1,
+      "value": -0.0013332151575013995
+    },
+    {
+      "channel": 0,
+      "sample": 1024,
+      "value": 0.1363734006881714
+    },
+    {
+      "channel": 0,
+      "sample": 34397,
+      "value": 0.17530693113803864
+    },
+    {
+      "channel": 0,
+      "sample": 123456,
+      "value": 0.07425828278064728
+    },
+    {
+      "channel": 0,
+      "sample": 343978,
+      "value": -0.10533120483160019
+    },
+    {
+      "channel": 0,
+      "sample": 343979,
+      "value": -0.10567668080329895
+    },
+    {
+      "channel": 1,
+      "sample": 0,
+      "value": 0.07499998807907104
+    },
+    {
+      "channel": 1,
+      "sample": 1,
+      "value": 0.07508108764886856
+    },
+    {
+      "channel": 1,
+      "sample": 1024,
+      "value": -0.11978971213102341
+    },
+    {
+      "channel": 1,
+      "sample": 34397,
+      "value": 0.055411066859960556
+    },
+    {
+      "channel": 1,
+      "sample": 123456,
+      "value": -0.14949358999729156
+    },
+    {
+      "channel": 1,
+      "sample": 343978,
+      "value": 0.05512135848402977
+    },
+    {
+      "channel": 1,
+      "sample": 343979,
+      "value": 0.05331167206168175
+    }
+  ],
+  "direction": {
+    "vocal": [
+      {
+        "local": -19.99999984620763,
+        "whole": -4.329262849922987,
+        "balance": -19.99999985458027
+      }
+    ],
+    "whole": [
+      {
+        "local": -97.95853225674615,
+        "whole": -99.85889611961011,
+        "balance": -2.492792391041018
+      }
+    ],
+    "mixed": [
+      {
+        "local": -19.999999846207974,
+        "whole": -4.329262849923522,
+        "balance": -19.99999985458027
+      },
+      {
+        "local": 19.999999853782544,
+        "whole": 4.329262839859256,
+        "balance": 19.999999846834456
+      }
+    ]
+  }
+}

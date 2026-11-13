@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mornye/services/audio_analysis_jobs.dart';
 import 'package:mornye/services/audio_version_comparison.dart';
 import 'package:mornye/services/audio_version_learned.dart';
+import 'package:mornye/services/audio_version_demucs.dart';
+import 'package:mornye/services/audio_source_preference.dart';
 
 void main() {
   const result = {
@@ -46,7 +48,11 @@ void main() {
       );
       expect(compared.pathB, 'content://audio/b');
       expect(compared.data['absolute_uncensored_status'], 'unknown');
-      expect(stages, AudioComparisonStage.values);
+      expect(stages, [
+        AudioComparisonStage.decodingA,
+        AudioComparisonStage.decodingB,
+        AudioComparisonStage.comparing,
+      ]);
       expect(cleaned, true);
       for (final args in commands) {
         expect(args[args.indexOf('-t') + 1], '601');
@@ -125,6 +131,36 @@ void main() {
       completed.complete(result);
       await rejected;
       expect(cleaned, true);
+    },
+  );
+  test(
+    'encoded source replacement during analysis invalidates its result',
+    () async {
+      var snapshots = 0, cleaned = false;
+      final runner = AudioVersionComparisonRunner(
+        capturePair: (_, _) async => AudioSourcePair(
+          '/a',
+          '/b',
+          snapshots++ == 0 ? 'encoded-before' : 'encoded-after',
+          'encoded-b',
+        ),
+        createWork: () async => Directory('/private/test'),
+        removeWork: (_) async {
+          cleaned = true;
+        },
+        byteLength: (_) async => AudioVersionComparisonRunner.minPcmBytes,
+        decode: (_) async => (id: 1, completed: Future.value(true)),
+        native: (_, {required requestId}) async => {
+          ...result,
+          'source_a_sha256': 'decoded-pcm-a',
+        },
+      );
+      await expectLater(
+        runner.compare('/a', '/b'),
+        throwsA(isA<AudioComparisonException>()),
+      );
+      expect(cleaned, true);
+      expect(snapshots, 2);
     },
   );
   test('network sources are rejected without decoding', () async {
@@ -213,6 +249,7 @@ void main() {
       );
       final runner = AudioVersionComparisonRunner(
         learned: learned,
+        demucs: AudioVersionDemucsRunner(supported: false),
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           expect(released, true);
@@ -223,7 +260,7 @@ void main() {
         native: (args, {required requestId}) async {
           final op = args['operation'] as String;
           operations.add(op);
-          if (op == 'audio_version_compare')
+          if (op == 'audio_version_compare') {
             return {
               ...result,
               'status': 'model_verification_required',
@@ -233,12 +270,14 @@ void main() {
                 {'start_a': 8.5, 'end_a': 9.5, 'start_b': 8.0, 'end_b': 9.0},
               ],
             };
-          if (op == 'audio_version_prepare_clip')
+          }
+          if (op == 'audio_version_prepare_clip') {
             return {
               'normalization': 'runtime',
               'samples': 192000,
               'model_sha256': AudioVersionLearnedRunner.modelSha256,
             };
+          }
           expect(op, 'audio_version_verify_context');
           expect(args['all_events'], [
             {'start_b': 8.0, 'end_b': 9.0},
@@ -283,6 +322,7 @@ void main() {
       );
       final runner = AudioVersionComparisonRunner(
         learned: learned,
+        demucs: AudioVersionDemucsRunner(supported: false),
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           cleaned = true;

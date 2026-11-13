@@ -5,12 +5,14 @@ import 'package:ffmpeg_kit_flutter_new_audio/ffmpeg_kit_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:mornye/services/audio_analysis_jobs.dart';
 import 'package:mornye/services/audio_version_learned.dart';
+import 'package:mornye/services/audio_version_demucs.dart';
+import 'package:mornye/services/audio_source_preference.dart';
 import 'package:mornye/services/ffmpeg_support.dart';
 import 'package:mornye/services/platform_bridge.dart';
 import 'package:mornye/utils/desktop_platform.dart';
 import 'package:mornye/utils/file_access.dart' show isContentUri;
 
-enum AudioComparisonStage { decodingA, decodingB, comparing }
+enum AudioComparisonStage { decodingA, decodingB, comparing, separating }
 
 enum AudioComparisonFailure {
   unsupportedInput,
@@ -31,11 +33,15 @@ class AudioVersionComparison {
     this.pathA,
     this.pathB,
     this.startedAt,
-    this.data,
-  );
+    this.data, {
+    this.sourcePair,
+  });
   final String pathA, pathB;
   final DateTime startedAt;
   final Map<String, dynamic> data;
+
+  /// Encoded-file bytes captured before decoding, separate from data PCM hashes.
+  final AudioSourcePair? sourcePair;
 }
 
 typedef ComparisonDecoder =
@@ -49,6 +55,7 @@ typedef ComparisonNative =
 class AudioVersionComparisonRunner {
   AudioVersionComparisonRunner({
     AudioVersionLearnedRunner? learned,
+    AudioVersionDemucsRunner? demucs,
     ComparisonDecoder? decode,
     Future<void> Function(int)? cancelDecode,
     ComparisonNative? native,
@@ -56,7 +63,9 @@ class AudioVersionComparisonRunner {
     Future<Directory> Function()? createWork,
     Future<int> Function(String)? byteLength,
     Future<void> Function(Directory)? removeWork,
+    Future<AudioSourcePair?> Function(String, String)? capturePair,
   }) : learned = learned ?? AudioVersionLearnedRunner(),
+       demucs = demucs ?? AudioVersionDemucsRunner(),
        _jobs = AudioAnalysisJobs<bool>(
          start: decode ?? _decode,
          cancel: cancelDecode ?? FFmpegExecution.cancel,
@@ -65,6 +74,7 @@ class AudioVersionComparisonRunner {
        _cancelNative = cancelNative ?? PlatformBridge.cancelNativeDataJob,
        _createWork = createWork ?? _temporaryDirectory,
        _byteLength = byteLength ?? ((path) => File(path).length()),
+       _capturePair = capturePair ?? AudioSourcePreference.instance.capture,
        _removeWork =
            removeWork ??
            ((work) async {
@@ -74,12 +84,14 @@ class AudioVersionComparisonRunner {
   static const maxPcmBytes = 38400000;
   static const minPcmBytes = 13 * 16000 * 4;
   final AudioVersionLearnedRunner learned;
+  final AudioVersionDemucsRunner demucs;
   final AudioAnalysisJobs<bool> _jobs;
   final ComparisonNative _native;
   final Future<void> Function(String) _cancelNative;
   final Future<Directory> Function() _createWork;
   final Future<int> Function(String) _byteLength;
   final Future<void> Function(Directory) _removeWork;
+  final Future<AudioSourcePair?> Function(String, String) _capturePair;
   final Set<String> _requests = {};
   int _generation = 0;
   bool _disposed = false;
@@ -121,6 +133,7 @@ class AudioVersionComparisonRunner {
     _generation++;
     _jobs.invalidate();
     learned.cancelAll();
+    demucs.cancelAll();
     for (final request in _requests.toList()) {
       unawaited(_cancelNative(request).catchError((Object _) {}));
     }
@@ -131,6 +144,7 @@ class AudioVersionComparisonRunner {
     cancel();
     _jobs.dispose();
     learned.dispose();
+    demucs.dispose();
   }
 
   Future<AudioVersionComparison> compare(
@@ -155,6 +169,8 @@ class AudioVersionComparisonRunner {
     }
     Directory? work;
     try {
+      final pair = await _capturePair(pathA, pathB);
+      check();
       work = await _createWork();
       check();
       final outputs = <String>[];
@@ -239,9 +255,32 @@ class AudioVersionComparisonRunner {
         check();
         await _verify(result, outputs, work, check);
         check();
+        if (result['verification_status'] == 'confirmed_content_change' &&
+            await demucs.status() == AudioVersionModelStatus.available) {
+          onProgress?.call(AudioComparisonStage.separating);
+          await _direction(result, [pathA, pathB], work, check);
+        }
+        check();
       }
       check();
-      return AudioVersionComparison(pathA, pathB, startedAt, result);
+      if (pair != null) {
+        final current = await _capturePair(pathA, pathB);
+        check();
+        if (current == null ||
+            current.digestA != pair.digestA ||
+            current.digestB != pair.digestB) {
+          throw const AudioComparisonException(
+            AudioComparisonFailure.unsupportedInput,
+          );
+        }
+      }
+      return AudioVersionComparison(
+        pathA,
+        pathB,
+        startedAt,
+        result,
+        sourcePair: pair,
+      );
     } finally {
       // Native/decoder completion owns these files, even after UI cancellation.
       if (work != null) {
@@ -264,6 +303,200 @@ class AudioVersionComparisonRunner {
     } finally {
       _requests.remove(id);
     }
+  }
+
+  Future<void> _direction(
+    Map<String, dynamic> result,
+    List<String> originals,
+    Directory work,
+    void Function() check,
+  ) async {
+    final all = (result['candidates'] as List).cast<Map<String, dynamic>>();
+    final confirmed = (result['verified_events'] as List)
+        .cast<Map<String, dynamic>>()
+        .where((e) => e['confirmed'] == true)
+        .toList();
+    final offset = ((result['alignment'] as Map)['offset'] as num).toDouble();
+    final directions = <Map<String, dynamic>>[];
+    for (final (index, event) in confirmed.indexed) {
+      check();
+      final start =
+          (((event['start_b'] as num) + (event['end_b'] as num)) / 2 - 6)
+              .clamp(
+                0.0,
+                ((result['duration_b'] as num).toDouble() - 12).clamp(
+                  0.0,
+                  600.0,
+                ),
+              )
+              .toDouble();
+      final mixes = <String>[], stems = <String>[];
+      for (var side = 0; side < 2; side++) {
+        final seek = start + (side == 0 ? offset : 0);
+        final mix = '${work.path}/direction-$index-$side-mix.f32le';
+        final delay = seek < 0 ? (-seek * 44100).round() : 0;
+        final success = await _jobs.run([
+          '-hide_banner',
+          '-loglevel',
+          'error',
+          '-nostdin',
+          '-y',
+          '-threads',
+          '1',
+          '-filter_threads',
+          '1',
+          '-protocol_whitelist',
+          'file,saf,fd,pipe',
+          '-ss',
+          seek.clamp(0, 600).toString(),
+          '-i',
+          originals[side],
+          '-t',
+          '12',
+          '-vn',
+          '-sn',
+          '-dn',
+          '-ac',
+          '2',
+          '-ar',
+          '44100',
+          '-af',
+          'adelay=${delay}S:all=1,apad=whole_len=529200,atrim=end_sample=529200',
+          '-c:a',
+          'pcm_f32le',
+          '-f',
+          'f32le',
+          mix,
+        ]);
+        check();
+        if (!success || await _byteLength(mix) != 529200 * 2 * 4) {
+          throw const AudioComparisonException(AudioComparisonFailure.decode);
+        }
+        mixes.add(mix);
+        final chunks = <String>[];
+        Map<String, dynamic>? metadata;
+        final tensors = <Map<String, String>>[];
+        // Twelve seconds require three bounded HTDemucs chunks.
+        for (var chunk = 0; chunk < 3; chunk++) {
+          final base = '${work.path}/demucs-$index-$side-$chunk';
+          final prepared = await _job({
+            'operation': 'audio_version_demucs_prepare',
+            'path': mix,
+            'offset': chunk * 257985,
+            'wave_path': '$base-wave.f32le',
+            'spec_path': '$base-spec.f32le',
+          }, 'demucs-prepare-${work.path}-$index-$side-$chunk');
+          check();
+          if (prepared['model_sha256'] !=
+                  AudioVersionDemucsRunner.modelSha256 ||
+              prepared['samples'] != 529200 ||
+              prepared['segment'] != 343980 ||
+              prepared['stride'] != 257985) {
+            throw const AudioComparisonException(
+              AudioComparisonFailure.unavailable,
+            );
+          }
+          metadata ??= prepared;
+          tensors.add({
+            'clip_id': '$chunk',
+            'wave_path': '$base-wave.f32le',
+            'spec_path': '$base-spec.f32le',
+          });
+        }
+        final batch = await demucs.infer(
+          tensors,
+          requestId: 'demucs-infer-${work.path}-$index-$side',
+        );
+        try {
+          check();
+          final contexts = (batch['contexts'] as List)
+              .cast<Map<Object?, Object?>>();
+          for (final input in tensors) {
+            final raw = contexts.singleWhere(
+              (c) => c['clip_id'] == input['clip_id'],
+            );
+            final tensor = raw;
+            final chunk = tensor['clip_id'] as String;
+            final base = '${work.path}/demucs-$index-$side-$chunk';
+            final separated = '$base-stems.f32le';
+            await _job({
+              'operation': 'audio_version_demucs_finish',
+              'freq_path': tensor['freq_path'],
+              'time_path': tensor['time_path'],
+              'output_path': separated,
+            }, 'demucs-finish-${work.path}-$index-$side-$chunk');
+            check();
+            chunks.add(separated);
+          }
+        } finally {
+          await demucs.release(batch);
+        }
+        for (final tensor in tensors) {
+          await File(tensor['wave_path']!).delete();
+          await File(tensor['spec_path']!).delete();
+        }
+        final separated = '${work.path}/direction-$index-$side-stems.f32le';
+        await _job({
+          'operation': 'audio_version_demucs_merge',
+          'chunks': chunks,
+          'samples': 529200,
+          'mean': metadata!['mean'],
+          'std': metadata['std'],
+          'output_path': separated,
+        }, 'demucs-merge-${work.path}-$index-$side');
+        check();
+        for (final path in chunks) {
+          await File(path).delete();
+        }
+        stems.add(separated);
+      }
+      final direction = await _job({
+        'operation': 'audio_version_demucs_direction',
+        'stems_a': stems[0],
+        'stems_b': stems[1],
+        'mix_a': mixes[0],
+        'mix_b': mixes[1],
+        'samples': 529200,
+        'context_start_b': start,
+        'events': [
+          {'start_b': event['start_b'], 'end_b': event['end_b']},
+        ],
+        'all_events': [
+          for (final e in all) {'start_b': e['start_b'], 'end_b': e['end_b']},
+        ],
+      }, 'demucs-direction-${work.path}-$index');
+      check();
+      if (direction['model_sha256'] != AudioVersionDemucsRunner.modelSha256 ||
+          direction['absolute_uncensored_status'] != 'unknown' ||
+          !const {null, 'A', 'B'}.contains(direction['preferred_side']) ||
+          (direction['preferred_side'] != null &&
+              direction['assessment'] != 'relative_vocal_loss_supported')) {
+        throw const AudioComparisonException(
+          AudioComparisonFailure.unavailable,
+        );
+      }
+      directions.add(direction);
+      for (final path in [...mixes, ...stems]) {
+        await File(path).delete();
+      }
+    }
+    result['direction_contexts'] = directions;
+    // Aggregation is intentionally conservative: every confirmed event must agree.
+    final sides = directions.map((d) => d['preferred_side']).toSet();
+    if (directions.length == confirmed.length &&
+        directions.isNotEmpty &&
+        sides.length == 1 &&
+        const {'A', 'B'}.contains(sides.single)) {
+      result['preferred_side'] = sides.single;
+      result['direction_status'] = 'consistent_vocal_loss';
+    } else {
+      result['direction_status'] =
+          (sides.contains('A') && sides.contains('B')) ||
+              directions.any((d) => d['assessment'] == 'mixed_local_changes')
+          ? 'mixed'
+          : 'unknown';
+    }
+    result['direction_model_sha256'] = AudioVersionDemucsRunner.modelSha256;
   }
 
   Future<void> _verify(

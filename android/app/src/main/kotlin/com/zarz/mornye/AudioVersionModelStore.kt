@@ -23,8 +23,9 @@ internal class AudioVersionModelStore(
     private val directory: File,
     private val expectedBytes: Long = AudioVersionWavlmContract.MODEL_BYTES,
     private val expectedSha256: String = AudioVersionWavlmContract.MODEL_SHA256,
+    private val filename: String = "wavlm-layer6-fp32.onnx",
 ) {
-    val model: File get() = File(directory, "wavlm-layer6-fp32.onnx")
+    val model: File get() = File(directory, filename)
 
     fun verifiedModel(checkCancelled: () -> Unit = {}): File? {
         if (!model.isFile || model.length() != expectedBytes) return null
