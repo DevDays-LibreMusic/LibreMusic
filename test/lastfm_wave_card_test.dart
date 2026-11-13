@@ -86,14 +86,25 @@ void main() {
     tester.view.viewInsets = const FakeViewPadding(bottom: 260);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    // EditableText owns a horizontal Scrollable too. Target the picker's
+    // vertical list so the keyboard-height regression exercises real scrolling.
+    final pickerList = find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Scrollable && widget.axisDirection == AxisDirection.down,
+      ),
+    );
+    expect(pickerList, findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Done'),
       100,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: pickerList,
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(tester.getBottomLeft(find.text('Done')).dy, lessThanOrEqualTo(308));
+    expect(find.text('Done').hitTestable(), findsOneWidget);
   });
 
   testWidgets('expired account offers sign-in without hiding playback', (

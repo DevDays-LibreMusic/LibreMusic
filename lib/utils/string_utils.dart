@@ -7,15 +7,22 @@ String? normalizeOptionalString(String? value) {
 }
 
 /// Parses the parental-advisory flag from backend/extension payloads, which
-/// may arrive as a bool, a 0/1 number, or a "true"/"1" string.
+/// may arrive as a bool, number, or string. Only known values become bool;
+/// missing and unrecognized values stay null rather than appearing clean.
 bool? parseExplicitFlag(dynamic value) {
   if (value == null) return null;
   if (value is bool) return value;
-  if (value is num) return value == 1;
+  if (value is num) {
+    if (value == 1) return true;
+    if (value == 0) return false;
+    return null;
+  }
   if (value is String) {
     final normalized = value.trim().toLowerCase();
     if (normalized.isEmpty || normalized == 'null') return null;
-    return normalized == 'true' || normalized == '1';
+    if (const {'true', '1', 'explicit'}.contains(normalized)) return true;
+    if (const {'false', '0', 'clean'}.contains(normalized)) return false;
+    return null;
   }
   return null;
 }

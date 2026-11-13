@@ -4,6 +4,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+// Public SoundCloud /tracks/14156106 response captured 2026-11-12.
+// Only public identity/playability fields are retained; no client ID or log data.
+// https://soundcloud.com/deathgrips/death-grips-exmilitary-1
+const publicSoundCloudTrack = JSON.parse(fs.readFileSync(path.join(
+  __dirname, 'fixtures/soundcloud_track_14156106_20261112.json',
+)));
+
 function runtime(provider, respond) {
   let extension;
   const queries = [];
@@ -50,6 +57,114 @@ function runtime(provider, respond) {
     check: (title = 'Signal (with Guest Artist)', options = {}) => extension.checkAvailability('', title, 'Lead Artist', { duration_ms: 180000, ...options }),
   };
 }
+
+test('soundcloud: current public responses without access resolve directly and by search', () => {
+  const artist = publicSoundCloudTrack.user.username;
+  const options = {
+    spotify_id: String(publicSoundCloudTrack.id),
+    duration_ms: publicSoundCloudTrack.duration,
+    track: { provider_id: 'soundcloud' },
+  };
+  const directApp = runtime('soundcloud', () => assert.fail('direct ID should not search'));
+  directApp.c.fetchTrackData = id => {
+    assert.equal(id, String(publicSoundCloudTrack.id));
+    return publicSoundCloudTrack;
+  };
+  const direct = directApp.extension.checkAvailability('', publicSoundCloudTrack.title, artist, options);
+  assert.equal(direct.available, true);
+  assert.equal(direct.track_id, String(publicSoundCloudTrack.id));
+  assert.equal(direct.skip_fallback, true);
+  assert.equal(direct.fallback_scope, "provider");
+
+  const searchApp = runtime('soundcloud', () => assert.fail('scGet is replaced below'));
+  searchApp.c.scGet = path => {
+    assert.match(path, /^search\/tracks/);
+    return { collection: [publicSoundCloudTrack] };
+  };
+  const search = searchApp.extension.checkAvailability('', publicSoundCloudTrack.title, artist, {
+    ...options, track: { provider_id: 'apple-music' },
+  });
+  assert.equal(search.available, true);
+  assert.equal(search.track_id, String(publicSoundCloudTrack.id));
+  assert.equal(search.prepared_context.track.streamable, true);
+});
+
+for (const [label, change] of [
+  ['preview access', { access: 'preview' }],
+  ['empty-string access', { access: '' }],
+  ['false access', { access: false }],
+  ['zero access', { access: 0 }],
+  ['disabled streaming', { streamable: false }],
+]) {
+  test(`soundcloud: non-playable response is rejected: ${label}`, () => {
+    const blocked = { ...publicSoundCloudTrack, ...change };
+    const artist = blocked.user.username;
+    const options = {
+      spotify_id: String(blocked.id), duration_ms: blocked.duration,
+      track: { provider_id: 'soundcloud' },
+    };
+    const directApp = runtime('soundcloud', () => assert.fail('direct ID should not search'));
+    directApp.c.fetchTrackData = () => blocked;
+    const direct = directApp.extension.checkAvailability('', blocked.title, artist, options);
+    assert.equal(direct.available, false);
+    assert.equal(direct.skip_fallback, true);
+
+    const searchApp = runtime('soundcloud', () => assert.fail('scGet is replaced below'));
+    searchApp.c.scGet = () => ({ collection: [blocked] });
+    assert.equal(searchApp.extension.checkAvailability('', blocked.title, artist, {
+      ...options, track: { provider_id: 'apple-music' },
+    }).available, false);
+  });
+}
+
+test('soundcloud: unavailable direct IDs stop only source lookup when recording metadata is complete', () => {
+  for (const error of [false, true]) {
+    const app = runtime('soundcloud', () => assert.fail('must not search another SoundCloud ID'));
+    app.c.fetchTrackData = () => {
+      if (error) throw new Error('source temporarily unavailable');
+      return {...publicSoundCloudTrack, streamable: false};
+    };
+    const result = app.extension.checkAvailability('', publicSoundCloudTrack.title, publicSoundCloudTrack.user.username, {
+      spotify_id: String(publicSoundCloudTrack.id), duration_ms: publicSoundCloudTrack.duration,
+      track: {provider_id: 'soundcloud'},
+    });
+    assert.equal(result.available, false);
+    assert.equal(result.skip_fallback, true);
+    assert.equal(result.fallback_scope, 'provider');
+    assert.equal(app.queries.length, 0);
+  }
+});
+
+test('soundcloud: missing recording metadata preserves the global direct-ID veto', () => {
+  for (const metadata of [
+    {title: '', artist: '', duration_ms: 0},
+    {title: 'Signal', artist: 'Artist', duration_ms: 0},
+    {title: 'Signal', artist: '', duration_ms: 180000},
+  ]) {
+    const app = runtime('soundcloud', () => assert.fail('direct ID should not search'));
+    app.c.fetchTrackData = () => ({...publicSoundCloudTrack, streamable: false});
+    const result = app.extension.checkAvailability('', metadata.title, metadata.artist, {
+      spotify_id: String(publicSoundCloudTrack.id), duration_ms: metadata.duration_ms,
+      track: {provider_id: 'soundcloud'},
+    });
+    assert.equal(result.available, false);
+    assert.equal(result.skip_fallback, true);
+    assert.equal(result.fallback_scope, 'recording');
+  }
+});
+
+test('soundcloud: an unexpected direct recording ID vetoes every fallback', () => {
+  const app = runtime('soundcloud', () => assert.fail('wrong ID must not start search'));
+  app.c.fetchTrackData = () => ({...publicSoundCloudTrack, id: publicSoundCloudTrack.id + 1});
+  const result = app.extension.checkAvailability('', publicSoundCloudTrack.title, publicSoundCloudTrack.user.username, {
+    spotify_id: String(publicSoundCloudTrack.id), duration_ms: publicSoundCloudTrack.duration,
+    track: {provider_id: 'soundcloud'},
+  });
+  assert.equal(result.available, false);
+  assert.equal(result.skip_fallback, true);
+  assert.equal(result.fallback_scope, 'recording');
+  assert.match(result.reason, /different recording/);
+});
 
 for (const provider of ['soundcloud', 'ytmusic-spotiflac']) {
   test(`${provider}: a foreign numeric catalog ID is not a direct track ID`, () => {

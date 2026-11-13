@@ -24,6 +24,12 @@
     if (!value || value.error) C.fail("api_error", "Deezer не вернул данные каталога");
     return value;
   }
+  function explicitFlag(raw) {
+    if (raw.explicit_lyrics === true || raw.explicit_content_lyrics === 1) return true;
+    if (raw.explicit_content_lyrics === 0 ||
+        (raw.explicit_lyrics === false && raw.explicit_content_lyrics == null)) return false;
+    return null;
+  }
   function map(raw, album) {
     album = album || raw.album || {};
     var artists = (raw.contributors || []).map(function (a) { return a.name; }).filter(Boolean);
@@ -35,7 +41,7 @@
       cover_url: album.cover_xl || album.cover_big || album.cover_medium || "",
       track_number: Number(raw.track_position) || 0, disc_number: Number(raw.disk_number) || 0,
       total_tracks: Number(album.nb_tracks) || 0, release_date: raw.release_date || album.release_date || "",
-      explicit: !!raw.explicit_lyrics, external_urls: "https://www.deezer.com/track/" + raw.id};
+      explicit: explicitFlag(raw), external_urls: "https://www.deezer.com/track/" + raw.id};
   }
   function getTrack(id) {
     id = C.numeric(id);

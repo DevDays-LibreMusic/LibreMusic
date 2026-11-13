@@ -90,7 +90,7 @@ impl DeezerClient {
                     .unwrap_or_default(),
                 album_id: format!("deezer:{}", album.id),
                 album_type: deezer::album_type(&album.record_type),
-                explicit: track.is_explicit(),
+                explicit: track.censorship(),
                 ..Default::default()
             });
         }
@@ -226,7 +226,7 @@ impl DeezerClient {
                     .cloned()
                     .unwrap_or_default(),
                 album_id: format!("deezer:{}", track.album.id),
-                explicit: track.is_explicit(),
+                explicit: track.censorship(),
                 ..Default::default()
             });
         }

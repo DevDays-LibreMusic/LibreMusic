@@ -1987,6 +1987,14 @@
   "@sectionService": {
     "description": "Settings section header"
   },
+  "downloadPreferExplicitTracks": "Сначала версии без цензуры",
+  "@downloadPreferExplicitTracks": {
+    "description": "Setting - prefer uncensored recordings"
+  },
+  "downloadPreferExplicitTracksSubtitle": "В поиске и волнах версии без цензуры важнее качества записи. Выключите, чтобы сначала выбирать качество.",
+  "@downloadPreferExplicitTracksSubtitle": {
+    "description": "Setting - uncensored versus quality priority"
+  },
   "sectionAudioQuality": "Качество аудио",
   "@sectionAudioQuality": {
     "description": "Settings section header"

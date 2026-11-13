@@ -1,0 +1,27 @@
+{
+  "id": 14156106,
+  "title": "Death Grips - Exmilitary - 1 - Beware",
+  "streamable": true,
+  "policy": "ALLOW",
+  "duration": 352569,
+  "full_duration": 352787,
+  "user": {
+    "username": "deathgrips"
+  },
+  "media": {
+    "transcodings": [
+      {
+        "url": "https://api-v2.soundcloud.com/media/soundcloud:tracks:14156106/a5fe477d-55a4-43de-9a96-844d5e828b19/stream/hls",
+        "preset": "aac_160k",
+        "duration": 352569,
+        "snipped": false,
+        "format": {
+          "protocol": "hls",
+          "mime_type": "audio/mp4; codecs=\"mp4a.40.2\""
+        },
+        "quality": "sq",
+        "is_legacy_transcoding": false
+      }
+    ]
+  }
+}

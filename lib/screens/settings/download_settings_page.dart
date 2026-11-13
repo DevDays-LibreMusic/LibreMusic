@@ -106,6 +106,15 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                         showDivider: true,
                       ),
                 SettingsSwitchItem(
+                  icon: Icons.music_note_outlined,
+                  title: context.l10n.downloadPreferExplicitTracks,
+                  subtitle: context.l10n.downloadPreferExplicitTracksSubtitle,
+                  value: settings.preferExplicitTracks,
+                  onChanged: (value) => ref
+                      .read(settingsProvider.notifier)
+                      .setPreferExplicitTracks(value),
+                ),
+                SettingsSwitchItem(
                   icon: Icons.verified_outlined,
                   title: context.l10n.downloadRedownloadFakeHiRes,
                   subtitle: context.l10n.downloadRedownloadFakeHiResSubtitle,

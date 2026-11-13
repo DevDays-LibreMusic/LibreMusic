@@ -14,8 +14,8 @@ pub struct Track {
     pub isrc: String,
     pub link: String,
     pub release_date: String,
-    pub explicit_lyrics: bool,
-    pub explicit_content_lyrics: isize,
+    pub explicit_lyrics: Option<bool>,
+    pub explicit_content_lyrics: Option<isize>,
     pub artist: Artist,
     pub album: Album,
     pub contributors: Option<Vec<Artist>>,
@@ -80,8 +80,20 @@ impl Track {
         }
     }
 
+    pub fn censorship(&self) -> Option<bool> {
+        if self.explicit_lyrics == Some(true) || self.explicit_content_lyrics == Some(1) {
+            Some(true)
+        } else if self.explicit_content_lyrics == Some(0)
+            || (self.explicit_lyrics == Some(false) && self.explicit_content_lyrics.is_none())
+        {
+            Some(false)
+        } else {
+            None
+        }
+    }
+
     pub fn is_explicit(&self) -> bool {
-        self.explicit_lyrics || self.explicit_content_lyrics == 1
+        self.censorship() == Some(true)
     }
 
     pub fn metadata(&self) -> TrackMetadata {
@@ -104,7 +116,7 @@ impl Track {
             isrc: self.isrc.clone(),
             album_id: format!("deezer:{}", self.album.id),
             artist_id: format!("deezer:{}", self.artist.id),
-            explicit: self.is_explicit(),
+            explicit: self.censorship(),
             ..TrackMetadata::default()
         }
     }
@@ -146,5 +158,50 @@ impl Artist {
             &self.picture_medium,
             &self.picture,
         ])
+    }
+}
+
+#[cfg(test)]
+mod censorship_tests {
+    use super::Track;
+
+    #[test]
+    fn public_deezer_fixture_preserves_advisory_metadata() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../test/fixtures/track_censorship/deezer_public_20261112.json"
+        ))
+        .unwrap();
+        let rows = fixture["responses"].as_array().unwrap();
+        assert_eq!(rows.len(), 3);
+        for row in rows {
+            let track: Track = serde_json::from_value(row["track"].clone()).unwrap();
+            let expected = row["track"]["explicit_lyrics"].as_bool();
+            assert_eq!(track.censorship(), expected);
+            assert_eq!(track.metadata().explicit, expected);
+        }
+    }
+
+    #[test]
+    fn deezer_preserves_clean_explicit_and_unknown_metadata() {
+        for (json, expected) in [
+            (
+                r#"{"explicit_lyrics":true,"explicit_content_lyrics":1}"#,
+                Some(true),
+            ),
+            (
+                r#"{"explicit_lyrics":false,"explicit_content_lyrics":0}"#,
+                Some(false),
+            ),
+            (
+                r#"{"explicit_lyrics":false,"explicit_content_lyrics":2}"#,
+                None,
+            ),
+            (r#"{"explicit_lyrics":false}"#, Some(false)),
+            (r#"{}"#, None),
+        ] {
+            let track: Track = serde_json::from_str(json).unwrap();
+            assert_eq!(track.censorship(), expected, "{json}");
+            assert_eq!(track.metadata().explicit, expected, "{json}");
+        }
     }
 }

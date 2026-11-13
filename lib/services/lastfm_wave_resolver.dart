@@ -1,4 +1,6 @@
 import 'package:mornye/models/track.dart';
+import 'package:mornye/models/track_censorship.dart';
+import 'package:mornye/services/track_search_ranking.dart';
 import 'package:mornye/services/lastfm_wave_service.dart';
 
 /// Keep version labels: a live/remix result must never replace a studio track.
@@ -15,17 +17,27 @@ String _artistMatchKey(String value) {
   return normalized == 'koяn' ? 'korn' : normalized;
 }
 
-Track? matchWaveTrack(LastfmWaveTrack recommendation, Iterable<Track> results) {
-  for (final track in results) {
-    if (!track.isCollection &&
+Track? matchWaveTrack(
+  LastfmWaveTrack recommendation,
+  Iterable<Track> results, {
+  bool preferExplicit = true,
+}) {
+  final matches = results.where(
+    (track) =>
+        !track.isCollection &&
         track.id.isNotEmpty &&
-        waveMatchKey(track.name) == waveMatchKey(recommendation.title) &&
+        waveMatchKey(withoutCensorshipMarker(track.name)) ==
+            waveMatchKey(withoutCensorshipMarker(recommendation.title)) &&
         _artistMatchKey(track.artistName) ==
-            _artistMatchKey(recommendation.artist)) {
-      return track;
-    }
-  }
-  return null;
+            _artistMatchKey(recommendation.artist),
+  );
+  if (matches.isEmpty) return null;
+  return matches.reduce(
+    (best, next) =>
+        compareTrackVersions(best, next, preferExplicit: preferExplicit) <= 0
+        ? best
+        : next,
+  );
 }
 
 typedef WaveTrackSearch = Future<List<Track>> Function(LastfmWaveTrack track);
@@ -49,22 +61,45 @@ Future<({List<Track> tracks, int failures})> resolveWaveBatch(
 }
 
 /// Some catalogues omit the exact recording for an artist+title query while
-/// returning it for title alone. Keep identity matching unchanged on both.
+/// returning it for title alone. A non-explicit match also gets this one bounded
+/// chance to find an uncensored version; other version labels remain significant.
 Future<List<Track>> searchWaveCandidates(
   LastfmWaveTrack requested,
   Future<List<Track>> Function(String query) search, {
+  bool preferExplicit = true,
   void Function(String phase, int count, bool matched)? onResult,
 }) async {
-  final queries = ['${requested.artist} ${requested.title}', requested.title];
+  final title = withoutCensorshipMarker(requested.title);
+  final queries = ['${requested.artist} $title', title];
+  Track? best;
   for (var index = 0; index < queries.length; index++) {
-    final results = await search(queries[index]);
-    final match = matchWaveTrack(requested, results);
+    late final List<Track> results;
+    try {
+      results = await search(queries[index]);
+    } on Exception {
+      if (best case final existing?) return [existing];
+      rethrow;
+    }
+    final match = matchWaveTrack(
+      requested,
+      results,
+      preferExplicit: preferExplicit,
+    );
     onResult?.call(
       index == 0 ? 'primary' : 'title_fallback',
       results.length,
       match != null,
     );
-    if (match != null) return [match];
+    if (match != null) {
+      if (best == null ||
+          compareTrackVersions(match, best, preferExplicit: preferExplicit) <
+              0) {
+        best = match;
+      }
+      if (!preferExplicit || best.censorship != TrackCensorship.clean) {
+        return [best];
+      }
+    }
   }
-  return [];
+  return [?best];
 }
