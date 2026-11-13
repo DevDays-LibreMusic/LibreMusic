@@ -83,7 +83,13 @@ def recover(root):
             output.writeframes((np.stack([a, b], axis=1) * 32767).astype('<i2').tobytes())
         subprocess.run([sys.executable, str(EXPORT / 'export_demucs_mobile.py'),
                         '--audio', str(audio), '--output', str(root / 'demucs')], check=True, env=env)
-    verify_exports(root)
+    try:
+        verify_exports(root)
+    except RuntimeError:
+        sys.path.insert(0, str(EXPORT))
+        from fingerprint import diagnose
+        diagnose(root / 'demucs/htdemucs-trunk-fp32.onnx', EXPORT / 'demucs-reference-fingerprint.json')
+        raise
 
 
 def main():
