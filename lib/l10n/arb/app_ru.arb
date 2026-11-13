@@ -10566,7 +10566,7 @@
   "audioCompareContentChanged": "Подтверждены изменения содержания — направление цензуры неизвестно",
   "audioCompareContentUnconfirmed": "Изменения содержания не подтверждены",
   "audioCompareContentUncertain": "Проверка содержания не дала однозначного результата",
-  "audioCompareModelError": "Не удалось импортировать модель. Выберите соответствующий исходный ONNX: WavLM layer-6 (216 МБ) или HTDemucs (174 МБ).",
+  "audioCompareModelError": "Не удалось подготовить встроенные модели анализа. Повторите сравнение; повреждённый пакет приложения может потребовать обновления.",
   "audioCompareDemucsReady": "Модель вокала HTDemucs готова.",
   "audioCompareDemucsMissing": "Импортируйте HTDemucs (174 МБ), чтобы определить, в какой записи сохранено больше вокала.",
   "audioCompareImportDemucs": "Импортировать модель HTDemucs ONNX",
@@ -10581,5 +10581,7 @@
   "audioCompareProviderInstructions": "Выберите две версии одного исполнения у настроенных музыкальных провайдеров. Аудио загружается на устройство и анализируется локально. Сохранённое предпочтение использует проверенную копию. Замена слов без потери вокала может остаться неопределённой.",
   "audioCompareNotSelected": "Не выбрано",
   "audioCompareSearchVersions": "Найти версии",
-  "audioComparePreparing": "Подготавливаем выбранные записи…"
+  "audioComparePreparing": "Подготавливаем выбранные записи…",
+  "audioComparePreparingModels": "Подготавливаем встроенные модели анализа…",
+  "audioCompareModelsAutomatic": "Модели анализа включены и подготавливаются автоматически при первом сравнении."
 }

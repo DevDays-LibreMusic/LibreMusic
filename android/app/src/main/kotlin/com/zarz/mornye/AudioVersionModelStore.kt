@@ -34,6 +34,13 @@ internal class AudioVersionModelStore(
         }
     }
 
+    /** Open APK assets only on demand; no large byte-array model allocation. */
+    fun ensureBundled(openAsset: () -> InputStream, checkCancelled: () -> Unit = {}): File {
+        checkCancelled()
+        verifiedModel(checkCancelled)?.let { return it }
+        return openAsset().use { import(it, checkCancelled) }
+    }
+
     fun import(source: InputStream, checkCancelled: () -> Unit = {}): File {
         check(directory.isDirectory || directory.mkdirs()) { "Cannot create analysis model directory" }
         val temporary = File.createTempFile("wavlm-import-", ".part", directory)

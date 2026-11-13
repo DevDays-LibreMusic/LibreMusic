@@ -26,6 +26,7 @@ class FocusedChecksTest(unittest.TestCase):
         self.assertEqual(patterns, [
             "test_check_local_changes.py", "test_deliver_android_debug.py",
             "test_build_android.py", "test_check_backend_apk.py",
+            "test_bundle_audio_version_models.py",
         ])
         self.assertNotIn("test_*.py", patterns)
 

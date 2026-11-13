@@ -39,6 +39,15 @@ class AudioVersionDemucsRunner {
     }
   }
 
+  Future<void> prepareModel({required String requestId}) async {
+    final raw = await _operation('prepareModel', requestId, const {});
+    if (raw is! Map || !_contract(raw) || raw['status'] != 'available') {
+      throw const AudioVersionLearnedException(
+        AudioVersionLearnedFailure.invalidModel,
+      );
+    }
+  }
+
   Future<void> importModel(String source, {required String requestId}) async {
     if (source.isEmpty ||
         !const {'', 'file', 'content'}.contains(Uri.tryParse(source)?.scheme)) {

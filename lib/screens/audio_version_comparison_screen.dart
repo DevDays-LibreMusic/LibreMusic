@@ -38,57 +38,11 @@ class _AudioVersionComparisonScreenState
   bool _busy = false;
   bool _saved = false;
   bool _saving = false;
-  AudioVersionModelStatus _demucs = AudioVersionModelStatus.unavailable;
-  AudioVersionModelStatus _model = AudioVersionModelStatus.unavailable;
 
   @override
   void initState() {
     super.initState();
     _pathB = widget.initialPathB;
-    _refreshModel();
-  }
-
-  Future<void> _refreshModel() async {
-    final status = await _runner.learned.status();
-    final demucs = await _runner.demucs.status();
-    if (mounted) {
-      setState(() {
-        _model = status;
-        _demucs = demucs;
-      });
-    }
-  }
-
-  Future<void> _importModel({bool demucs = false}) async {
-    final generation = ++_generation;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      final file = await FilePicker.pickFile(type: FileType.any);
-      if (!mounted || generation != _generation || file?.path == null) return;
-      if (demucs) {
-        await _runner.demucs.importModel(
-          file!.path!,
-          requestId: 'demucs-model-$generation',
-        );
-      } else {
-        await _runner.learned.importModel(
-          file!.path!,
-          requestId: 'model-$generation',
-        );
-      }
-      if (mounted && generation == _generation) await _refreshModel();
-    } on AudioAnalysisCancelled {
-      // The import was cancelled by this screen.
-    } catch (_) {
-      if (mounted && generation == _generation) {
-        setState(() => _error = AudioComparisonFailure.modelImport);
-      }
-    } finally {
-      if (mounted && generation == _generation) setState(() => _busy = false);
-    }
   }
 
   int _generation = 0;
@@ -136,7 +90,7 @@ class _AudioVersionComparisonScreenState
       _result = null;
       _saved = false;
       _error = null;
-      _stage = AudioComparisonStage.decodingA;
+      _stage = AudioComparisonStage.preparingModels;
     });
     try {
       final result = await _runner.compare(
@@ -274,6 +228,8 @@ class _AudioVersionComparisonScreenState
               const SizedBox(height: 16),
               const LinearProgressIndicator(),
               Text(switch (_stage) {
+                AudioComparisonStage.preparingModels =>
+                  l.audioComparePreparingModels,
                 AudioComparisonStage.decodingA => l.audioCompareDecodeA,
                 AudioComparisonStage.decodingB => l.audioCompareDecodeB,
                 AudioComparisonStage.separating => l.audioCompareSeparating,
@@ -289,26 +245,7 @@ class _AudioVersionComparisonScreenState
                 _ => l.audioCompareError,
               }),
             const SizedBox(height: 20),
-            Text(
-              _model == AudioVersionModelStatus.available
-                  ? l.audioCompareModelReady
-                  : l.audioCompareNoModel,
-            ),
-            if (_model != AudioVersionModelStatus.unsupported)
-              OutlinedButton(
-                onPressed: _busy ? null : () => _importModel(),
-                child: Text(l.audioCompareImportModel),
-              ),
-            Text(
-              _demucs == AudioVersionModelStatus.available
-                  ? l.audioCompareDemucsReady
-                  : l.audioCompareDemucsMissing,
-            ),
-            if (_demucs != AudioVersionModelStatus.unsupported)
-              OutlinedButton(
-                onPressed: _busy ? null : () => _importModel(demucs: true),
-                child: Text(l.audioCompareImportDemucs),
-              ),
+            Text(l.audioCompareModelsAutomatic),
             if (result != null) ...[
               const Divider(),
               Text(summary, style: Theme.of(context).textTheme.titleMedium),

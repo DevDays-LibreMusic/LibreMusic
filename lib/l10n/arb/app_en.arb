@@ -10939,7 +10939,7 @@
   "audioCompareContentChanged": "Content changes confirmed — censorship direction unknown",
   "audioCompareContentUnconfirmed": "No content changes confirmed",
   "audioCompareContentUncertain": "Content verification is inconclusive",
-  "audioCompareModelError": "Model import failed. Select the matching original WavLM layer-6 (216 MB) or HTDemucs (174 MB) ONNX file.",
+  "audioCompareModelError": "Unable to prepare the built-in analysis models. Try the comparison again; a damaged app package may need updating.",
   "audioCompareDemucsReady": "HTDemucs vocal model ready.",
   "audioCompareDemucsMissing": "Import HTDemucs (174 MB) to determine which recording retains more vocal content.",
   "audioCompareImportDemucs": "Import HTDemucs ONNX model",
@@ -10954,5 +10954,7 @@
   "audioCompareProviderInstructions": "Choose two versions of the same performance from your configured music providers. Audio is downloaded to this device and analyzed locally. Saved preferences play the retained recording; word substitutions without vocal loss may remain unknown.",
   "audioCompareNotSelected": "Not selected",
   "audioCompareSearchVersions": "Search versions",
-  "audioComparePreparing": "Preparing the selected recordings..."
+  "audioComparePreparing": "Preparing the selected recordings...",
+  "audioComparePreparingModels": "Preparing built-in analysis models...",
+  "audioCompareModelsAutomatic": "Analysis models are included and prepared automatically on first comparison."
 }

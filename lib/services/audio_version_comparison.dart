@@ -12,7 +12,13 @@ import 'package:mornye/services/platform_bridge.dart';
 import 'package:mornye/utils/desktop_platform.dart';
 import 'package:mornye/utils/file_access.dart' show isContentUri;
 
-enum AudioComparisonStage { decodingA, decodingB, comparing, separating }
+enum AudioComparisonStage {
+  preparingModels,
+  decodingA,
+  decodingB,
+  comparing,
+  separating,
+}
 
 enum AudioComparisonFailure {
   unsupportedInput,
@@ -64,6 +70,7 @@ class AudioVersionComparisonRunner {
     Future<int> Function(String)? byteLength,
     Future<void> Function(Directory)? removeWork,
     Future<AudioSourcePair?> Function(String, String)? capturePair,
+    Future<void> Function()? prepareModels,
   }) : learned = learned ?? AudioVersionLearnedRunner(),
        demucs = demucs ?? AudioVersionDemucsRunner(),
        _jobs = AudioAnalysisJobs<bool>(
@@ -75,12 +82,15 @@ class AudioVersionComparisonRunner {
        _createWork = createWork ?? _temporaryDirectory,
        _byteLength = byteLength ?? ((path) => File(path).length()),
        _capturePair = capturePair ?? AudioSourcePreference.instance.capture,
+       _prepareModels = prepareModels,
        _removeWork =
            removeWork ??
            ((work) async {
              await work.delete(recursive: true);
            });
 
+  static int _nextRunnerId = 0;
+  final _runnerId = _nextRunnerId++;
   static const maxPcmBytes = 38400000;
   static const minPcmBytes = 13 * 16000 * 4;
   final AudioVersionLearnedRunner learned;
@@ -92,6 +102,7 @@ class AudioVersionComparisonRunner {
   final Future<int> Function(String) _byteLength;
   final Future<void> Function(Directory) _removeWork;
   final Future<AudioSourcePair?> Function(String, String) _capturePair;
+  final Future<void> Function()? _prepareModels;
   final Set<String> _requests = {};
   int _generation = 0;
   bool _disposed = false;
@@ -169,6 +180,25 @@ class AudioVersionComparisonRunner {
     }
     Directory? work;
     try {
+      onProgress?.call(AudioComparisonStage.preparingModels);
+      try {
+        if (_prepareModels != null) {
+          await _prepareModels();
+        } else {
+          await learned.prepareModel(
+            requestId: 'prepare-wavlm-$_runnerId-$generation',
+          );
+          check();
+          await demucs.prepareModel(
+            requestId: 'prepare-demucs-$_runnerId-$generation',
+          );
+        }
+      } on AudioVersionLearnedException {
+        throw const AudioComparisonException(
+          AudioComparisonFailure.modelImport,
+        );
+      }
+      check();
       final pair = await _capturePair(pathA, pathB);
       check();
       work = await _createWork();

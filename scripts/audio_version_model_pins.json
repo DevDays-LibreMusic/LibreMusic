@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "models": [
+    {"source": "wavlm/wavlm-layer6-fp32.onnx", "asset": "audio-version-models/wavlm-layer6-fp32.onnx", "bytes": 216152021, "sha256": "594a8aa0be7b036a14ac8b8d15e588b0f388295fbc026bc2acaed6ae983205eb"},
+    {"source": "demucs/htdemucs-trunk-fp32.onnx", "asset": "audio-version-models/htdemucs-trunk-fp32.onnx", "bytes": 174263852, "sha256": "273be7e599749c71ef29b6f34c20721937c336aa85b3e1f2fde5b57a987f07ba"}
+  ]
+}

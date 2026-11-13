@@ -93,6 +93,7 @@ void main() {
     (tester) async {
       var decodes = 0;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         capturePair: (_, _) async => null,
         createWork: () async => Directory('/private/comparison'),
         removeWork: (_) async {},
@@ -134,7 +135,9 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('Verification model is not installed.'),
+        find.textContaining(
+          'Analysis models are included and prepared automatically',
+        ),
         findsOneWidget,
       );
     },

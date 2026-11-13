@@ -22,6 +22,7 @@ void main() {
       final stages = <AudioComparisonStage>[];
       var cleaned = false;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           cleaned = true;
@@ -49,6 +50,7 @@ void main() {
       expect(compared.pathB, 'content://audio/b');
       expect(compared.data['absolute_uncensored_status'], 'unknown');
       expect(stages, [
+        AudioComparisonStage.preparingModels,
         AudioComparisonStage.decodingA,
         AudioComparisonStage.decodingB,
         AudioComparisonStage.comparing,
@@ -72,6 +74,7 @@ void main() {
       var nativeCalled = false;
       var cleaned = false;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           cleaned = true;
@@ -105,6 +108,7 @@ void main() {
       final cancelled = <String>[];
       var cleaned = false;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           cleaned = true;
@@ -138,6 +142,7 @@ void main() {
     () async {
       var snapshots = 0, cleaned = false;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         capturePair: (_, _) async => AudioSourcePair(
           '/a',
           '/b',
@@ -165,6 +170,7 @@ void main() {
   );
   test('network sources are rejected without decoding', () async {
     final runner = AudioVersionComparisonRunner(
+      prepareModels: () async {},
       createWork: () async => throw StateError('must not allocate'),
     );
     await expectLater(
@@ -181,6 +187,7 @@ void main() {
       final ids = <int>[];
       var cleaned = false;
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         createWork: () async => Directory('/private/test'),
         removeWork: (_) async {
           cleaned = true;
@@ -248,6 +255,7 @@ void main() {
         },
       );
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         learned: learned,
         demucs: AudioVersionDemucsRunner(supported: false),
         createWork: () async => Directory('/private/test'),
@@ -321,6 +329,7 @@ void main() {
         },
       );
       final runner = AudioVersionComparisonRunner(
+        prepareModels: () async {},
         learned: learned,
         demucs: AudioVersionDemucsRunner(supported: false),
         createWork: () async => Directory('/private/test'),

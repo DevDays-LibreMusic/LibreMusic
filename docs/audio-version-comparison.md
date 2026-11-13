@@ -7,16 +7,19 @@ selected item directly, with provider fallback disabled. It rejects a result who
 actual provider/item differs from the selection. Audio processing runs on the phone;
 there is no analysis server or audio upload.
 
-Import both original ONNX files using the comparison screen's file pickers:
+The self-contained Android APK includes both pinned ONNX models:
 
 | Model | Bytes | SHA-256 |
 | --- | ---: | --- |
 | WavLM layer 6 | 216152021 | `594a8aa0be7b036a14ac8b8d15e588b0f388295fbc026bc2acaed6ae983205eb` |
 | HTDemucs trunk | 174263852 | `273be7e599749c71ef29b6f34c20721937c336aa85b3e1f2fde5b57a987f07ba` |
 
-Imports validate length and SHA before atomically replacing an installed model.
-Models are stored separately and are not bundled into the APK. The app does not
-silently download models. Both recordings must be 13 seconds to 10 minutes long.
+On the first comparison, the app streams the bundled assets into its private model
+store, validating length and SHA before atomic publication. A valid stored model is
+reused without copying the asset again. No separate files, imports or model downloads
+are required. Preparation reports progress and can be cancelled; a partial or damaged
+model never produces a preferred side. Playback startup does not prepare models or
+start inference. Both recordings must be 13 seconds to 10 minutes long.
 
 Alignment and bounded DSP analysis locate candidate changes. WavLM verifies content
 changes; HTDemucs separates local stereo contexts and compares vocal energy against

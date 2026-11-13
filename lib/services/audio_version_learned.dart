@@ -89,6 +89,16 @@ class AudioVersionLearnedRunner {
     }
   }
 
+  /// Provision the pinned bundled APK asset lazily, without allocating model bytes in Dart.
+  Future<void> prepareModel({required String requestId}) async {
+    final raw = await _operation('prepareModel', requestId, const {});
+    if (raw is! Map || !_validContract(raw) || raw['status'] != 'available') {
+      throw const AudioVersionLearnedException(
+        AudioVersionLearnedFailure.invalidModel,
+      );
+    }
+  }
+
   /// [source] comes from an explicit local file picker. No URL is downloaded.
   Future<void> importModel(String source, {required String requestId}) async {
     if (source.isEmpty ||

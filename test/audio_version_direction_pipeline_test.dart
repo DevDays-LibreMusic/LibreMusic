@@ -17,6 +17,7 @@ void main() {
         'comparison-pipeline-',
       );
       final operations = <String>[];
+      final preparedModels = <String>[];
       final decodes = <List<String>>[];
       var releases = 0, direction = 0;
       final wavlm = AudioVersionLearnedRunner(
@@ -30,6 +31,10 @@ void main() {
             'output_frames': 599,
             'output_channels': 768,
           };
+          if (method == 'prepareModel') {
+            preparedModels.add('wavlm');
+            return {...contract, 'status': 'available'};
+          }
           if (method == 'status') return {...contract, 'status': 'available'};
           if (method == 'releaseOutputs') {
             releases++;
@@ -58,6 +63,10 @@ void main() {
             'version': AudioVersionDemucsRunner.modelId,
             'model_sha256': AudioVersionDemucsRunner.modelSha256,
           };
+          if (method == 'prepareModel') {
+            preparedModels.add('demucs');
+            return {...contract, 'status': 'available'};
+          }
           if (method == 'status') return {...contract, 'status': 'available'};
           if (method == 'releaseOutputs') {
             releases++;
@@ -90,6 +99,7 @@ void main() {
         byteLength: (path) async =>
             path.contains('-mix.') ? 529200 * 8 : 16000 * 4 * 40,
         decode: (args) async {
+          expect(preparedModels, ['wavlm', 'demucs']);
           decodes.add(args);
           if (args.last.contains('-mix.')) {
             await File(args.last).writeAsBytes([]);
@@ -188,6 +198,7 @@ void main() {
         );
         expect(result.data['absolute_uncensored_status'], 'unknown');
         expect(result.sourcePair?.digestA, 'hash-a');
+        expect(preparedModels, ['wavlm', 'demucs']);
         expect(result.data['source_a_sha256'], 'decoded-pcm-a');
         expect(
           result.sourcePair?.digestA,

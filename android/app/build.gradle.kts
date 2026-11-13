@@ -66,6 +66,7 @@ android {
     }
 
     sourceSets.getByName("main") {
+        assets.srcDir(".bundled-model-assets")
         java.srcDir("src/rust/kotlin")
         java.srcDir(rustBackendDir.resolve("target/bindings/kotlin"))
         jniLibs.srcDir(rustBackendDir.resolve("target/android/jniLibs"))

@@ -57,7 +57,7 @@ internal class AudioVersionDemucsChannel(context: Context, messenger: BinaryMess
             result.success(null)
             return
         }
-        if (call.method !in setOf("status", "importModel", "infer", "releaseOutputs")) {
+        if (call.method !in setOf("status", "prepareModel", "importModel", "infer", "releaseOutputs")) {
             result.notImplemented()
             return
         }
@@ -86,6 +86,10 @@ internal class AudioVersionDemucsChannel(context: Context, messenger: BinaryMess
                 request.check()
                 val answer = when (call.method) {
                     "status" -> modelStatus(request)
+                    "prepareModel" -> {
+                        modelStore.ensureBundled({ context.assets.open("audio-version-models/htdemucs-trunk-fp32.onnx") }, request::check)
+                        contract("available")
+                    }
                     "importModel" -> {
                         val source = requireNotNull(call.argument<String>("source"))
                         openSelectedModel(source).use { modelStore.import(it, request::check) }
