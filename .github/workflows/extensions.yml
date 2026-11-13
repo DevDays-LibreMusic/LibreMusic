@@ -1,0 +1,32 @@
+name: Extension catalog
+
+on:
+  pull_request:
+    paths:
+      - 'extensions/**'
+      - 'LICENSE'
+      - 'COPYING'
+      - 'NOTICE'
+      - '.github/workflows/extensions.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'extensions/**'
+      - 'LICENSE'
+      - 'COPYING'
+      - 'NOTICE'
+      - '.github/workflows/extensions.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify packages and catalog match source
+        run: python3 extensions/build_catalog.py --check
+      - name: Test catalog integrity checks
+        run: python3 -m unittest discover -s extensions/tests -p 'test_catalog.py'

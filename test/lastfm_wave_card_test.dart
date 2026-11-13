@@ -6,6 +6,7 @@ import 'package:mornye/providers/lastfm_account_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/wave_session_provider.dart';
 import 'package:mornye/widgets/lastfm_wave_card.dart';
+import 'package:mornye/widgets/wave_controls.dart';
 import 'package:mornye/services/shell_navigation_service.dart';
 
 class _Wave extends WaveSessionController {
@@ -66,6 +67,35 @@ Future<void> _pump(
 }
 
 void main() {
+  testWidgets('artist picker scrolls with keyboard on a small phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    await _pump(
+      tester,
+      _Wave(const WaveSessionState(loaded: true, seedArtists: ['Muse'])),
+      scale: 2,
+    );
+    final context = tester.element(find.byType(LastfmWaveCard));
+    showWaveArtistPicker(context);
+    await tester.pumpAndSettle();
+    tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.text('Done'),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(tester.getBottomLeft(find.text('Done')).dy, lessThanOrEqualTo(308));
+  });
+
   testWidgets('expired account offers sign-in without hiding playback', (
     tester,
   ) async {

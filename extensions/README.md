@@ -97,3 +97,11 @@ python3 extensions/build.py amazon-direct ytmusic-direct qobuz-direct tidal-dire
 Чтобы весь маршрут скачивания обходился без Zarz, установите Direct-пакеты
 и отключите исходные расширения с Zarz в приоритетах загрузки и резервных
 провайдерах. Одновременная установка сама по себе не отключает старые пакеты.
+
+## Подключаемый каталог LibreMusic
+
+Готовая папка [catalog/](catalog/README.md) содержит десять собственных
+расширений, установочные `.sflx` и `registry.json` для подключения по HTTPS.
+Сборка и проверка: `python3 extensions/build_catalog.py` и
+`python3 extensions/build_catalog.py --check`. Инструкция подключения и
+условие публикации адреса находятся в README каталога.

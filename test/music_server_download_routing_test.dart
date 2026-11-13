@@ -9,6 +9,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mornye/l10n/app_localizations.dart';
 import 'package:mornye/models/settings.dart';
+import 'package:mornye/models/discovery.dart';
+import 'package:mornye/providers/discovery_provider.dart';
+import 'package:mornye/screens/discovery_screen.dart';
 import 'package:mornye/models/track.dart';
 import 'package:mornye/providers/download_queue_provider.dart';
 import 'package:mornye/providers/extension_provider.dart';
@@ -96,10 +99,14 @@ class _Server {
     this.provider = 'example.audio',
     this.prepareStatus = 202,
     this.ready = false,
+    this.readyOnPrepare = false,
+    this.pollState = 'queued',
   });
   final String provider;
   final int prepareStatus;
   final bool ready;
+  final bool readyOnPrepare;
+  String pollState;
   final requests = <http.Request>[];
   Map<String, dynamic> get asset => {
     'id': 'a' * 64,
@@ -121,21 +128,25 @@ class _Server {
         'sources': [
           {
             'id': 'server-source',
-            'name': 'Server source',
+            'name':
+                'Server source with a very long descriptive name for mobile screens',
             'type': 'extension',
             'provider_id': provider,
             'qualities': ['LOSSLESS'],
           },
         ],
       },
-      '/v1/playback/prepare' => {'id': 'a' * 64, 'state': 'queued'},
+      '/v1/playback/prepare' =>
+        readyOnPrepare ? asset : {'id': 'a' * 64, 'state': 'queued'},
       '/v1/downloads' => {'items': <Map<String, dynamic>>[]},
       '/v1/tracks' => {
         'items': ready ? [asset] : <Map<String, dynamic>>[],
         'next_offset': null,
       },
       final path when path.startsWith('/v1/downloads/') =>
-        ready ? asset : {'id': 'a' * 64, 'state': 'queued'},
+        ready || pollState == 'ready'
+            ? asset
+            : {'id': 'a' * 64, 'state': pollState},
       _ => {'items': <Map<String, dynamic>>[], 'next_offset': null},
     };
     return http.Response(
@@ -203,6 +214,8 @@ Future<GoRouter> _showActions(
   bool askQuality = false,
   _Library? library,
   _Player? player,
+  Track? discoveryTrack,
+  List<DiscoveryOrigin> origins = const [],
 }) async {
   tester.view.physicalSize = const Size(1280, 1000);
   tester.view.devicePixelRatio = 1;
@@ -212,24 +225,28 @@ Future<GoRouter> _showActions(
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => Scaffold(
-          body: Consumer(
-            builder: (context, ref, child) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const TrackListenButton(track: _track),
-                FilledButton(
-                  onPressed: () => addTrackToServerLibrary(context, _track),
-                  child: const Text('Save streaming track'),
+        builder: (context, state) => discoveryTrack != null
+            ? const DiscoveryScreen()
+            : Scaffold(
+                body: Consumer(
+                  builder: (context, ref, child) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const TrackListenButton(track: _track),
+                      FilledButton(
+                        onPressed: () =>
+                            addTrackToServerLibrary(context, _track),
+                        child: const Text('Save streaming track'),
+                      ),
+                      FilledButton(
+                        onPressed: () =>
+                            downloadSingleTrack(context, ref, _track),
+                        child: const Text('Download track'),
+                      ),
+                    ],
+                  ),
                 ),
-                FilledButton(
-                  onPressed: () => downloadSingleTrack(context, ref, _track),
-                  child: const Text('Download track'),
-                ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       GoRoute(
         path: '/music-server',
@@ -245,6 +262,25 @@ Future<GoRouter> _showActions(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (discoveryTrack != null) ...[
+          discoveryCatalogProvider.overrideWith(
+            (ref) async => const DiscoveryCatalog(
+              genres: [DiscoveryGenre(id: '0', name: 'All')],
+              region: 'mixed',
+              sourceName: 'Unified discovery',
+            ),
+          ),
+          discoveryFeedProvider.overrideWith(
+            (ref, query) async => DiscoveryFeed(
+              entries: [
+                DiscoveryEntry(track: discoveryTrack, origins: origins),
+              ],
+              fetchedAt: DateTime.now(),
+              region: 'mixed',
+              sourceName: 'Unified discovery',
+            ),
+          ),
+        ],
         musicServerClientProvider.overrideWithValue(client),
         localLibraryProvider.overrideWith(() => library ?? _Library()),
         musicPlayerControllerProvider.overrideWithValue(player ?? _Player()),
@@ -268,6 +304,13 @@ Future<GoRouter> _showActions(
     ),
   );
   await tester.pumpAndSettle();
+  if (discoveryTrack != null) {
+    expect(find.text('Listen'), findsNothing);
+    await tester.tap(find.text('Trends'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Listen'));
+    return router;
+  }
   await tester.tap(switch (action) {
     'Listen' => find.byTooltip('Listen'),
     'Save' => find.text('Save streaming track'),
@@ -286,6 +329,168 @@ Future<void> _pumpServer(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('server source selector fits narrow mobile viewport', (
+    tester,
+  ) async {
+    final server = _Server();
+    final client = MusicServerClient(
+      client: MockClient(server.respond),
+      readSession: () async => _savedSession,
+      writeSession: (_) async {},
+    );
+    await _showActions(tester, client, _LocalQueue(), action: 'Listen');
+    await _pumpServer(tester);
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final ready in [false, true]) {
+    testWidgets(
+      'Trends Listen uses a matching origin and streams only ready audio: reuse $ready',
+      (tester) async {
+        final server = _Server(readyOnPrepare: ready);
+        final queue = _LocalQueue();
+        final player = _Player();
+        final client = MusicServerClient(
+          client: MockClient(server.respond),
+          readSession: () async => _savedSession,
+          writeSession: (_) async {},
+        );
+        await _showActions(
+          tester,
+          client,
+          queue,
+          discoveryTrack: _track.copyWith(
+            id: 'apple-id',
+            source: 'apple-music',
+          ),
+          origins: const [
+            DiscoveryOrigin(
+              sourceId: 'example.audio',
+              sourceName: 'Example',
+              region: 'global',
+              nativeId: 'provider-track-42',
+              nativeTrack: _track,
+            ),
+          ],
+          player: player,
+        );
+        await _pumpServer(tester);
+        expect(server.preparations, hasLength(1));
+        final prepared = jsonDecode(server.preparations.single.body) as Map;
+        expect(prepared['source'], {
+          'connection_id': 'server-source',
+          'track_id': _track.id,
+        });
+        if (!ready) {
+          expect(player.played, isEmpty);
+          server.pollState = 'ready';
+          await _pumpServer(tester);
+          await _pumpServer(tester);
+        }
+        expect(player.played.single.source, client.source('a' * 64));
+        expect(server.preparations, hasLength(1));
+        expect(queue._builds, 0);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
+
+  testWidgets(
+    'Trends Listen cannot send a catalog ID to an unrelated server provider',
+    (tester) async {
+      final server = _Server();
+      final queue = _LocalQueue();
+      final player = _Player();
+      final client = MusicServerClient(
+        client: MockClient(server.respond),
+        readSession: () async => _savedSession,
+        writeSession: (_) async {},
+      );
+      await _showActions(
+        tester,
+        client,
+        queue,
+        discoveryTrack: _track.copyWith(source: 'itunes', id: '123'),
+        player: player,
+      );
+      await _pumpServer(tester);
+      expect(server.preparations, isEmpty);
+      expect(player.played, isEmpty);
+      expect(queue._builds, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'Leaving Trends preparation stops polling and never starts playback',
+    (tester) async {
+      final server = _Server();
+      final queue = _LocalQueue();
+      final player = _Player();
+      final client = MusicServerClient(
+        client: MockClient(server.respond),
+        readSession: () async => _savedSession,
+        writeSession: (_) async {},
+      );
+      await _showActions(
+        tester,
+        client,
+        queue,
+        discoveryTrack: _track,
+        player: player,
+      );
+      await _pumpServer(tester);
+      expect(server.preparations, hasLength(1));
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      final count = server.requests.length;
+      server.pollState = 'ready';
+      await tester.pump(const Duration(seconds: 10));
+      expect(server.requests.length, count);
+      expect(player.played, isEmpty);
+      expect(queue._builds, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'Failed Trends preparation is retryable and never falls back to local',
+    (tester) async {
+      final server = _Server(pollState: 'failed');
+      final queue = _LocalQueue();
+      final player = _Player();
+      final client = MusicServerClient(
+        client: MockClient(server.respond),
+        readSession: () async => _savedSession,
+        writeSession: (_) async {},
+      );
+      await _showActions(
+        tester,
+        client,
+        queue,
+        discoveryTrack: _track,
+        player: player,
+      );
+      await _pumpServer(tester);
+      await _pumpServer(tester);
+      expect(player.played, isEmpty);
+      expect(queue._builds, 0);
+      final play = find.widgetWithText(FilledButton, 'Play');
+      await tester.ensureVisible(play);
+      await tester.tap(play);
+      await _pumpServer(tester);
+      expect(server.preparations, hasLength(2));
+      expect(player.played, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   for (final signIn in [false, true]) {
     testWidgets(
       'Add to library prepares a server reference, sign-in: $signIn',

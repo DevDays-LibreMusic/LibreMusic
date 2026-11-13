@@ -25,6 +25,7 @@ void downloadSingleTrack(
   String? playlistName,
   int? playlistPosition,
   bool forceQualityPicker = false,
+  Track Function(String service)? trackForService,
 }) {
   final container = ProviderScope.containerOf(context, listen: false);
   final settings = container.read(settingsProvider);
@@ -46,7 +47,7 @@ void downloadSingleTrack(
         container
             .read(downloadQueueProvider.notifier)
             .addToQueue(
-              track,
+              trackForService?.call(service) ?? track,
               service,
               qualityOverride: quality,
               playlistName: playlistName,
@@ -71,7 +72,7 @@ void downloadSingleTrack(
     container
         .read(downloadQueueProvider.notifier)
         .addToQueue(
-          track,
+          trackForService?.call(service) ?? track,
           service,
           playlistName: playlistName,
           playlistPosition: playlistPosition,

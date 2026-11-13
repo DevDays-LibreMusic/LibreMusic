@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:mornye/services/local_network_access.dart';
 import 'package:mornye/services/secure_storage_options.dart';
 
 class MusicServerException implements Exception {
@@ -20,7 +21,9 @@ class MusicServerClient {
     http.Client? client,
     Future<String?> Function()? readSession,
     Future<void> Function(String?)? writeSession,
+    Future<void> Function(Uri)? ensureAccess,
   }) : _client = client ?? http.Client(),
+       _ensureAccess = ensureAccess ?? LocalNetworkAccess.instance.ensureAccess,
        _readSession = readSession ?? (() => _storage.read(key: _key)),
        _writeSession =
            writeSession ??
@@ -36,6 +39,7 @@ class MusicServerClient {
   );
   static const scheme = 'musicserver';
   final http.Client _client;
+  final Future<void> Function(Uri) _ensureAccess;
   final Future<String?> Function() _readSession;
   final Future<void> Function(String?) _writeSession;
   Uri? _base;
@@ -107,6 +111,7 @@ class MusicServerClient {
     Map<String, dynamic>? body,
     String token = '',
   }) async {
+    await _ensureAccess(base);
     final request = http.Request(method, base.resolve(path))
       ..followRedirects = false;
     request.headers['Accept'] = 'application/json';
