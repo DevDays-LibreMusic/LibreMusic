@@ -974,7 +974,9 @@ void main() {
           await _settle();
           deck.state = PlaybackDeckState.completed;
           deck.completions.add(null);
-          for (var i = 0; i < 30 && player.mediaItem.value!.id != 'two'; i++) {
+          // Metadata switches before asynchronous source preferences resolve.
+          // Await the actual fallback deck load, not just the announced item.
+          for (var i = 0; i < 30 && deck.sources.length < 2; i++) {
             await _settle();
           }
           expect(player.mediaItem.value!.id, 'two');
