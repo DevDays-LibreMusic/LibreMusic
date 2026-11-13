@@ -1,0 +1,31 @@
+name: Pinned self-contained audio version models
+description: Verify cached exports or recover exact FP32 exports from pinned official inputs
+runs:
+  using: composite
+  steps:
+    - name: Setup export Python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+    - name: Cache exact mobile exports
+      id: models
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/libremusic/mobile-models
+        key: mobile-models-${{ runner.os }}-legacy-fp32-opset17-v1-${{ hashFiles('scripts/audio_version_model_pins.json', 'scripts/mobile_model_export/**', 'scripts/bootstrap_audio_version_models.py') }}
+    - name: Install pinned CPU exporter on cache miss
+      if: steps.models.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        python -m pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+        python -m pip install -r scripts/mobile_model_export/requirements.txt
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+    - name: Verify exports and stage Android assets
+      shell: bash
+      env:
+        MODEL_CACHE_HIT: ${{ steps.models.outputs.cache-hit }}
+      run: |
+        flags=()
+        if [[ "$MODEL_CACHE_HIT" == 'true' ]]; then flags+=(--require-existing); fi
+        python scripts/bootstrap_audio_version_models.py "${flags[@]}"

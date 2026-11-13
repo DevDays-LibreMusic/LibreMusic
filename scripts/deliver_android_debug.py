@@ -16,6 +16,7 @@ import tempfile
 import zipfile
 
 import check_backend_apk as payload
+import bundle_audio_version_models as models
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'com.zarz.mornye.debug'
@@ -63,8 +64,9 @@ def sha(path):
     return digest.hexdigest()
 
 
-def audit_apk(path, marker, native):
+def audit_apk(path, marker, native, model_descriptors=None):
     with zipfile.ZipFile(path) as archive:
+        model_audit = models.audit_archive(archive, model_descriptors)
         infos = archive.infolist()
         names = archive.namelist()
         payload.check_archive_integrity(archive, infos)
@@ -89,7 +91,7 @@ def audit_apk(path, marker, native):
         overhead = path.stat().st_size - compressed
         if overhead > MAX_ZIP_OVERHEAD:
             raise RuntimeError(f'Unexpected ZIP packaging overhead: {overhead} bytes.')
-        return {'entries': len(infos), 'compressed_payload_bytes': compressed,
+        return {'bundled_models': model_audit, 'entries': len(infos), 'compressed_payload_bytes': compressed,
                 'packaging_overhead_bytes': overhead, 'rust_payload_sha256': native_hash,
                 'forbidden_entry_name_check': 'passed (not a general secret scanner)'}
 
@@ -117,6 +119,8 @@ def acquire_lock(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--model-root', default=os.environ.get('LIBREMUSIC_MODEL_ROOT'),
+                        help='Local pinned export root; both models are required for self-contained delivery')
     parser.add_argument('--output-dir', type=Path, default=Path.home() / 'Downloads')
     parser.add_argument('--check-area', action='append', required=True,
                         choices=('lastfm', 'playback', 'logging', 'build'))
@@ -127,7 +131,8 @@ def main():
     lock = acquire_lock(ROOT)
     atexit.register(lock.close)
     commit = clean_source(ROOT)
-    marker = f'commit-{commit[:12]}-debug-arm64-lite'
+    model_inputs = models.stage(args.model_root)
+    marker = f'commit-{commit[:12]}-debug-arm64-lite-bundled-models'
     stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     output = args.output_dir.expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -219,7 +224,7 @@ def main():
         raise RuntimeError('Patched Flutter SDK changed during delivery.')
     manifest = {'schema': 1, 'source_commit': commit, 'source_tree': git(ROOT, 'rev-parse', 'HEAD^{tree}'),
                 'built_utc': dt.datetime.now(dt.timezone.utc).isoformat(), 'build_marker': marker,
-                'variant': 'debug', 'lite': True, 'package': PACKAGE, 'abis': [ABI],
+                'variant': 'debug', 'self_contained_models': True, 'model_inputs': model_inputs, 'lite': True, 'package': PACKAGE, 'abis': [ABI],
                 'version_code': version.group(1), 'version_name': version.group(2),
                 'flutter': actual, 'flutter_sdk_evidence': sdk_evidence,
                 'android_build_tools': '37.0.0', 'android_ndk': '30.0.16248370',

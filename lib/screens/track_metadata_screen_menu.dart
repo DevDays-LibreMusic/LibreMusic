@@ -53,6 +53,19 @@ extension _TrackMetadataMenu on _TrackMetadataScreenState {
           UnifiedLibraryItem.fromDownloadHistory(downloadItem),
     ];
     return <_MetadataOption>[
+      if (canEditFile && !remoteFile && !_isCueFile)
+        _MetadataOption(
+          icon: Icons.compare_arrows,
+          label: l10n.audioCompareTitle,
+          onTap: () => Navigator.of(screenContext).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AudioVersionComparisonScreen(
+                pathA: cleanFilePath,
+                nameA: trackName,
+              ),
+            ),
+          ),
+        ),
       if (canSaveNetworkOfflineSource(cleanFilePath) && desktopSongs.isEmpty)
         _MetadataOption(
           icon: Icons.download_for_offline_outlined,

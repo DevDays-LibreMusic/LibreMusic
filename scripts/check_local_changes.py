@@ -52,7 +52,7 @@ def commands(area):
     if area == "build":
         return [["python3", f"scripts/test_{module}.py"]
                 for module in ("check_local_changes", "deliver_android_debug",
-                               "build_android", "check_backend_apk")]
+                               "build_android", "check_backend_apk", "bundle_audio_version_models")]
     paths = [f"test/{name}_test.dart" for name in TESTS[area]]
     return [
         ["fvm", "dart", "format", "--output=none", "--set-exit-if-changed",

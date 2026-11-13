@@ -1,0 +1,13 @@
+# Exact recovery environment; CPU wheels are selected by the CI action.
+torch==2.15.0
+transformers==5.22.2
+onnx==1.23.2
+onnxruntime==1.31.1
+demucs==4.1.0
+numpy==2.5.4
+safetensors==0.8.0
+huggingface_hub==2.4.0
+einops==0.8.2
+julius==0.2.8
+PyYAML==6.0.3
+protobuf==7.36.2

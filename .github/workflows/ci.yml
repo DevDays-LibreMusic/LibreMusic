@@ -36,6 +36,10 @@ jobs:
         with:
           filters: |
             delivery:
+              - 'scripts/*audio_version_models.py'
+              - 'scripts/audio_version_model_pins.json'
+              - 'scripts/mobile_model_export/**'
+              - '.github/actions/audio-version-models/**'
               - 'scripts/deliver_android_debug.py'
               - 'scripts/test_deliver_android_debug.py'
               - 'scripts/check_local_changes.py'
@@ -93,6 +97,10 @@ jobs:
               - '.fvmrc'
               - '.github/workflows/ci.yml'
             android:
+              - 'scripts/*audio_version_models.py'
+              - 'scripts/audio_version_model_pins.json'
+              - 'scripts/mobile_model_export/**'
+              - '.github/actions/audio-version-models/**'
               - 'third_party/audio_service/**'
               - 'third_party/mornye_discord/**'
               - 'scripts/setup_discord_sdk.sh'
@@ -127,7 +135,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Test delivery and APK audits without building Android
-        run: python3 scripts/check_local_changes.py --run build
+        run: |
+          python3 scripts/check_local_changes.py --run build
+          python3 -m unittest discover -s scripts -p 'test_*audio_version_models.py'
 
   flutter:
     name: Flutter analyze & test
@@ -327,6 +337,7 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_prepare_discord_sdk.py'
           python3 -m unittest discover -s scripts -p 'test_build_android.py'
+          python3 -m unittest discover -s scripts -p 'test_*audio_version_models.py'
           python3 -m unittest discover -s scripts -p 'test_flutter_git_commit.py'
           python3 -m unittest discover -s scripts -p 'test_check_backend_apk.py'
 
@@ -363,8 +374,13 @@ jobs:
           key: cargo-${{ runner.os }}-android-${{ hashFiles('rust_backend/rust-toolchain.toml') }}-${{ hashFiles('rust_backend/Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-android-${{ hashFiles('rust_backend/rust-toolchain.toml') }}-
 
+      - name: Prepare pinned bundled inference models
+        uses: ./.github/actions/audio-version-models
+
       - name: Package Rust application and run native unit tests
-        run: gradle -p android :app:assembleDebug :app:testDebugUnitTest
+        run: |
+          gradle -p android :app:assembleDebug :app:testDebugUnitTest
+          python3 scripts/audit_audio_version_models.py build/app/outputs/apk/debug/*debug.apk
 
       - name: Build Rust release application
         run: |
@@ -376,6 +392,7 @@ jobs:
 
       - name: Verify Rust release APK payloads
         run: |
+          python3 scripts/audit_audio_version_models.py build/app/outputs/flutter-apk/app-*-release.apk
           audit_flags=()
           if [[ "$MORNYE_DISCORD_SDK" == "1" ]]; then
             audit_flags+=(--discord-sdk)

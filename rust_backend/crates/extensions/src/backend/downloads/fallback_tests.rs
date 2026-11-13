@@ -200,6 +200,14 @@ fn wave_source_unavailable_tries_another_provider_and_publishes_matching_audio()
         assert_eq!(result["success"], true, "{selected}: {result}");
         assert_eq!(result["service"], "example.fallback", "{result}");
         assert_eq!(
+            result["resolved_provider_id"], "example.fallback",
+            "{result}"
+        );
+        assert_eq!(
+            result["resolved_provider_track_id"], "fallback-track",
+            "{result}"
+        );
+        assert_eq!(
             fixture.stats("soundcloud"),
             json!({"checks":1,"downloads":0})
         );
@@ -465,6 +473,8 @@ fn available_scoped_source_is_tried_first_even_when_another_service_is_default()
     let result = fixture.run("example.fallback", true);
     assert_eq!(result["success"], true, "{result}");
     assert_eq!(result["service"], "soundcloud", "{result}");
+    assert_eq!(result["resolved_provider_id"], "soundcloud", "{result}");
+    assert_eq!(result["resolved_provider_track_id"], "14156106", "{result}");
     assert_eq!(
         fixture.stats("soundcloud"),
         json!({"checks":1,"downloads":1})

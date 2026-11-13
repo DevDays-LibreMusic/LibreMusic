@@ -73,8 +73,24 @@ For the personal side-by-side installation, use the guarded command below. Selec
 check areas relevant to the change (multiple `--check-area` flags are supported):
 
 ```bash
-python3 scripts/deliver_android_debug.py --check-area build --check-area logging
+python3 scripts/deliver_android_debug.py --model-root /path/to/local-model-exports --check-area build --check-area logging
 ```
+
+The debug delivery is self-contained: both pinned ONNX exports ship as ordinary
+Android assets and are prepared automatically on first comparison. The developer
+must supply `--model-root` (or `LIBREMUSIC_MODEL_ROOT`) containing
+`wavlm/wavlm-layer6-fp32.onnx` and `demucs/htdemucs-trunk-fp32.onnx`.
+`scripts/audio_version_model_pins.json` records exact lengths and SHA-256 values.
+No downloads run. Missing or altered inputs stop delivery before SDK/check/build
+work; CI must supply those same exports explicitly. The helper stages validated
+links in ignored `android/app/.bundled-model-assets/`, avoiding another copy of
+the 390 MB inputs. Source exports must remain available and unchanged until the
+build finishes. Do not commit binaries or staged links.
+
+The APK audit requires exactly both pinned model entries, hashes their actual ZIP
+streams, rejects additional ONNX/training/debug tensors, and records input and APK
+entry evidence plus `self_contained_models: true` in the delivery JSON. Other
+native, signing, package, ABI and source checks still apply.
 
 It rejects dirty source, locks concurrent deliveries, checks pinned FVM, applies
 and verifies the repository SDK patch, restores dependencies with an enforced

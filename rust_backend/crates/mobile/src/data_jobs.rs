@@ -103,6 +103,128 @@ fn execute(
             )?;
             serde_json::to_value(grid).map_err(|error| error.to_string())
         }
+        "audio_version_demucs_prepare" => mornye_core::audio_version_demucs::prepare(
+            string(request, "path")?,
+            request
+                .get("offset")
+                .and_then(Value::as_u64)
+                .ok_or("Missing chunk offset")? as usize,
+            string(request, "wave_path")?,
+            string(request, "spec_path")?,
+            check,
+        ),
+        "audio_version_demucs_finish" => {
+            mornye_core::audio_version_demucs::finish(
+                string(request, "freq_path")?,
+                string(request, "time_path")?,
+                string(request, "output_path")?,
+                check,
+            )?;
+            Ok(json!({"status":"complete"}))
+        }
+        "audio_version_demucs_merge" => {
+            let chunks: Vec<String> = serde_json::from_value(
+                request
+                    .get("chunks")
+                    .cloned()
+                    .ok_or("Missing separated chunks")?,
+            )
+            .map_err(|e| e.to_string())?;
+            mornye_core::audio_version_demucs::merge(
+                &chunks,
+                request
+                    .get("samples")
+                    .and_then(Value::as_u64)
+                    .ok_or("Missing sample count")? as usize,
+                request
+                    .get("mean")
+                    .and_then(Value::as_f64)
+                    .ok_or("Missing mean")?,
+                request
+                    .get("std")
+                    .and_then(Value::as_f64)
+                    .ok_or("Missing std")?,
+                string(request, "output_path")?,
+                check,
+            )?;
+            Ok(json!({"status":"complete"}))
+        }
+        "audio_version_demucs_direction" => {
+            let events: Vec<mornye_core::audio_version_content::Event> =
+                serde_json::from_value(request.get("events").cloned().ok_or("Missing events")?)
+                    .map_err(|e| e.to_string())?;
+            let all: Vec<mornye_core::audio_version_content::Event> = serde_json::from_value(
+                request
+                    .get("all_events")
+                    .cloned()
+                    .ok_or("Missing baseline events")?,
+            )
+            .map_err(|e| e.to_string())?;
+            mornye_core::audio_version_demucs::direction(
+                string(request, "stems_a")?,
+                string(request, "stems_b")?,
+                string(request, "mix_a")?,
+                string(request, "mix_b")?,
+                request
+                    .get("samples")
+                    .and_then(Value::as_u64)
+                    .ok_or("Missing sample count")? as usize,
+                request
+                    .get("context_start_b")
+                    .and_then(Value::as_f64)
+                    .ok_or("Missing context time")?,
+                &events,
+                &all,
+                check,
+            )
+        }
+        "audio_version_prepare_clip" => mornye_core::audio_version_content::prepare_raw_clip(
+            string(request, "path")?,
+            request
+                .get("start_seconds")
+                .and_then(Value::as_f64)
+                .ok_or("Missing context time")?,
+            string(request, "output_path")?,
+            check,
+        ),
+        "audio_version_verify_context" => {
+            use mornye_core::audio_version_content as content;
+            let events: Vec<content::Event> = serde_json::from_value(
+                request
+                    .get("events")
+                    .cloned()
+                    .ok_or("Missing content events")?,
+            )
+            .map_err(|e| e.to_string())?;
+            let all: Vec<content::Event> = serde_json::from_value(
+                request
+                    .get("all_events")
+                    .cloned()
+                    .ok_or("Missing baseline events")?,
+            )
+            .map_err(|e| e.to_string())?;
+            let verified = content::verify_context(
+                string(request, "embedding_a")?,
+                string(request, "embedding_b")?,
+                request
+                    .get("context_start_b")
+                    .and_then(Value::as_f64)
+                    .ok_or("Missing content context")?,
+                &events,
+                &all,
+                string(request, "model_sha256")?,
+                check,
+            )?;
+            serde_json::to_value(verified).map_err(|e| e.to_string())
+        }
+        "audio_version_compare" => {
+            let result = mornye_core::audio_version_comparison::compare_files(
+                string(request, "path_a")?,
+                string(request, "path_b")?,
+                check,
+            )?;
+            serde_json::to_value(result).map_err(|error| error.to_string())
+        }
         "audio_features" => {
             use mornye_core::native_audio_features as features;
             let paths = request

@@ -1,3 +1,4 @@
+import 'package:mornye/screens/audio_provider_comparison_screen.dart';
 import 'package:mornye/widgets/wave_controls.dart';
 import 'package:mornye/providers/wave_session_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -307,6 +308,16 @@ class _TrackOptionsSheet extends ConsumerWidget {
     required this.hasLocalPlaybackCandidate,
   });
 
+  void _compareVersions(BuildContext context) {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    navigator.pop();
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => AudioProviderComparisonScreen(seed: track),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -390,6 +401,11 @@ class _TrackOptionsSheet extends ConsumerWidget {
         ],
         groups: [
           [
+            MornyeMenuAction(
+              icon: Icons.compare_arrows,
+              label: l10n.audioCompareTitle,
+              onPressed: () => _compareVersions(context),
+            ),
             MornyeMenuAction(
               icon: Icons.waves,
               label: waveText(context, 'Волна по треку', 'Wave by track'),
@@ -635,6 +651,11 @@ class _TrackOptionsSheet extends ConsumerWidget {
                   excludeFromWave(root, ref, track, artist: true);
                   Navigator.pop(context);
                 },
+              ),
+              _OptionTile(
+                icon: Icons.compare_arrows,
+                title: context.l10n.audioCompareTitle,
+                onTap: () => _compareVersions(context),
               ),
               _OptionTile(
                 icon: Icons.headphones_outlined,

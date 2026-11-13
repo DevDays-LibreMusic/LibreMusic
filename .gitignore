@@ -118,3 +118,7 @@ hs_err_*.log
 flutter_*.log
 
 /scripts/__pycache__/
+
+# Validated local model links for self-contained Android packaging
+/android/app/.bundled-model-assets/
+/android/app/.bundled-model-assets-*/

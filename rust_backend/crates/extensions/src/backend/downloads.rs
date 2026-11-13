@@ -57,6 +57,11 @@ enum DownloadOutcome {
     Final(Value),
 }
 
+fn set_recording_identity(response: &mut Value, provider: &str, track_id: &str) {
+    response["resolved_provider_id"] = provider.into();
+    response["resolved_provider_track_id"] = track_id.into();
+}
+
 /// A provider-scoped stop ends this provider's ID lookup, not the configured
 /// cross-catalog fallback chain. Unknown scopes fail closed as recording locks.
 fn recording_fallback_blocked(availability: &Value) -> bool {
@@ -749,7 +754,7 @@ impl Backend {
         };
         let mut attempt = request.clone();
         attempt.quality = quality;
-        let outcome = self.download_attempt(
+        let mut outcome = self.download_attempt(
             &attempt,
             manifest,
             availability,
@@ -757,6 +762,11 @@ impl Backend {
             strict_recording,
             identity.as_ref(),
         )?;
+        if let DownloadOutcome::Final(response) = &mut outcome {
+            // Host provenance of the exact provider invocation, retained even
+            // when optional metadata enrichment changes display identifiers.
+            set_recording_identity(response, &manifest.name, &attempt.provider_track_id);
+        }
         if let DownloadOutcome::Retry(response) = &outcome {
             self.log_provider_failure(
                 &request.download_provider,

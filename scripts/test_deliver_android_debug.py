@@ -42,6 +42,7 @@ class DeliverySafetyTest(unittest.TestCase):
                     fails = ('--run' in command if failure == 'check' else '--debug' in command)
                     return subprocess.CompletedProcess(command, 7 if fails else 0)
                 with patch.object(delivery, 'ROOT', root), \
+                     patch.object(delivery.models, 'stage', return_value=[]), \
                      patch.object(delivery, 'clean_source', return_value='a' * 40), \
                      patch.object(delivery.subprocess, 'check_output', return_value=b'{"frameworkVersion":"pinned"}'), \
                      patch.object(delivery.subprocess, 'run', side_effect=fake_run), \
@@ -59,6 +60,16 @@ class DeliverySafetyTest(unittest.TestCase):
                     self.assertIn('--config-only', commands[3])
                     self.assertEqual(['bash', 'scripts/build_rust_backend.sh', 'android'], commands[4])
                     self.assertIn('--debug', commands[5])
+
+    def test_missing_model_root_refuses_before_toolchain_or_build(self):
+        with patch.object(delivery, 'ROOT', self.root), \
+             patch.object(delivery, 'clean_source', return_value='a' * 40), \
+             patch.object(delivery.subprocess, 'run') as run, \
+             patch.dict(os.environ, {}, clear=True), \
+             patch('sys.argv', ['delivery', '--check-area', 'build']):
+            with self.assertRaisesRegex(RuntimeError, 'Self-contained APK requires'):
+                delivery.main()
+            run.assert_not_called()
 
     def test_delivery_lock_excludes_second_builder(self):
         first = delivery.acquire_lock(self.root)
@@ -126,7 +137,7 @@ class DeliverySafetyTest(unittest.TestCase):
     def audit(self, path, native):
         with patch.object(delivery.payload, 'check_elf'), \
              patch.object(delivery.payload, 'check_backend_markers'):
-            return delivery.audit_apk(path, 'expected', native)
+            return delivery.audit_apk(path, 'expected', native, [])
 
     def test_audit_rejects_marker_native_mismatch_secret_entries_and_gaps(self):
         path, native = self.apk()
