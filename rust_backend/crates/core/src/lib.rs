@@ -5,6 +5,10 @@
 //! contract.
 
 pub mod app_version;
+pub mod audio_version_alignment;
+pub mod audio_version_comparison;
+pub mod audio_version_content;
+pub mod audio_version_spectral;
 pub mod cancellation;
 pub mod clock;
 pub mod cover;

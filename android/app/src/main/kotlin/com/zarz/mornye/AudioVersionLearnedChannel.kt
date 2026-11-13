@@ -1,0 +1,240 @@
+package com.zarz.mornye
+
+import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
+import android.content.Context
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.io.InputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.UUID
+import java.util.concurrent.CancellationException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
+
+/** No audio/model download: this channel accepts an explicitly selected local model only. */
+internal class AudioVersionLearnedChannel(context: Context, messenger: BinaryMessenger) : AutoCloseable {
+    private val context = context.applicationContext
+    private val channel = MethodChannel(messenger, "com.zarz.mornye/audio_version_learned")
+    private val main = Handler(Looper.getMainLooper())
+    private val executor = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "audio-version-learned").apply { isDaemon = true }
+    }
+    private val modelStore = AudioVersionModelStore(File(context.filesDir, "audio-version-models"))
+    private val outputs = File(context.cacheDir, "audio-version-learned")
+    private val requests = ConcurrentHashMap<String, Request>()
+    private val closed = AtomicBoolean(false)
+
+    init { channel.setMethodCallHandler(::handle) }
+
+    private class Request {
+        private val cancelled = AtomicBoolean(false)
+        private var active: OrtSession.RunOptions? = null
+        fun check() {
+            if (cancelled.get() || Thread.currentThread().isInterrupted) throw CancellationException()
+        }
+        @Synchronized fun bind(options: OrtSession.RunOptions?) {
+            active = options
+            if (options != null && cancelled.get()) options.setTerminate(true)
+        }
+        @Synchronized fun cancel() {
+            cancelled.set(true)
+            try { active?.setTerminate(true) } catch (_: Exception) { }
+        }
+    }
+
+    private fun handle(call: MethodCall, result: MethodChannel.Result) {
+        val suppliedId = (call.arguments as? Map<*, *>)?.get("request_id") as? String
+        if (call.method == "cancel") {
+            suppliedId?.let { requests[it]?.cancel() }
+            result.success(null)
+            return
+        }
+        if (call.method !in setOf("status", "importModel", "infer", "releaseOutputs")) {
+            result.notImplemented()
+            return
+        }
+        if (closed.get()) {
+            result.error("unavailable", "Local analysis is unavailable", null)
+            return
+        }
+        if (requests.size >= 8) {
+            result.error("unavailable", "Local analysis is busy", null)
+            return
+        }
+        val id = suppliedId ?: UUID.randomUUID().toString()
+        if (id.length !in 1..160) {
+            result.error("invalid_request", "Invalid analysis request", null)
+            return
+        }
+        val request = Request()
+        if (requests.putIfAbsent(id, request) != null) {
+            result.error("invalid_request", "Analysis request already exists", null)
+            return
+        }
+        executor.execute {
+            var pendingOutput: File? = null
+            var delivered = false
+            try {
+                request.check()
+                val answer = when (call.method) {
+                    "status" -> modelStatus(request)
+                    "importModel" -> {
+                        val source = requireNotNull(call.argument<String>("source"))
+                        openSelectedModel(source).use { modelStore.import(it, request::check) }
+                        contract("available")
+                    }
+                    "infer" -> infer(call, request)
+                    "releaseOutputs" -> {
+                        val outputId = requireNotNull(call.argument<String>("output_id"))
+                        require(UUID.fromString(outputId).toString() == outputId)
+                        privateOutput(outputId).deleteRecursively()
+                        null
+                    }
+                    else -> error("Unreachable")
+                }
+                pendingOutput = (answer as? Map<*, *>)?.get("output_id")?.let {
+                    privateOutput(it as String)
+                }
+                request.check()
+                main.post { result.success(answer) }
+                delivered = true
+            } catch (_: CancellationException) {
+                main.post { result.error("cancelled", "Analysis cancelled", null) }
+            } catch (_: AudioVersionInvalidModel) {
+                main.post { result.error("invalid_model", "Unsupported or damaged analysis model", null) }
+            } catch (_: OutOfMemoryError) {
+                main.post { result.error("unavailable", "Insufficient memory for local analysis", null) }
+            } catch (_: Exception) {
+                // Paths, provider URIs and audio contents never become diagnostic payloads.
+                val cancelled = try { request.check(); false } catch (_: CancellationException) { true }
+                main.post {
+                    result.error(
+                        if (cancelled) "cancelled" else "unavailable",
+                        if (cancelled) "Analysis cancelled" else "Local analysis is unavailable",
+                        null,
+                    )
+                }
+            } finally {
+                if (!delivered) pendingOutput?.deleteRecursively()
+                requests.remove(id, request)
+            }
+        }
+    }
+
+    private fun modelStatus(request: Request): Map<String, Any> =
+        contract(if (modelStore.verifiedModel(request::check) != null) "available" else "unavailable")
+
+    private fun contract(status: String): Map<String, Any> = mapOf(
+        "status" to status,
+        "version" to AudioVersionWavlmContract.MODEL_ID,
+        "model_sha256" to AudioVersionWavlmContract.MODEL_SHA256,
+        "input_samples" to AudioVersionWavlmContract.INPUT_SAMPLES,
+        "normalization" to "runtime",
+        "output_frames" to AudioVersionWavlmContract.OUTPUT_FRAMES,
+        "output_channels" to AudioVersionWavlmContract.OUTPUT_CHANNELS,
+    )
+
+    private fun openSelectedModel(source: String): InputStream {
+        val uri = Uri.parse(source)
+        return when (uri.scheme) {
+            "content" -> requireNotNull(context.contentResolver.openInputStream(uri))
+            "file" -> File(requireNotNull(uri.path)).inputStream()
+            null, "" -> File(source).inputStream()
+            else -> throw IllegalArgumentException("Model must be selected locally")
+        }
+    }
+
+    private fun privateInput(path: String): File =
+        audioVersionPrivateClip(path, listOf(context.cacheDir, context.filesDir))
+
+    private fun privateOutput(id: String): File = File(outputs, id).canonicalFile.also {
+        require(it.parentFile == outputs.canonicalFile)
+    }
+
+    private fun infer(call: MethodCall, request: Request): Map<String, Any> {
+        val clips = requireNotNull(call.argument<List<Map<String, Any>>>("clips"))
+        require(clips.size in 1..64)
+        val ids = clips.map { requireNotNull(it["clip_id"] as? String).also { id -> require(id.length in 1..160) } }
+        require(ids.toSet().size == ids.size)
+        // Validate every input before allocating a large model session.
+        val inputs = clips.map { clip ->
+            privateInput(requireNotNull(clip["path_a"] as? String)) to
+                privateInput(requireNotNull(clip["path_b"] as? String))
+        }
+        val model = modelStore.verifiedModel(request::check) ?: return contract("unavailable")
+        check(outputs.isDirectory || outputs.mkdirs())
+        val outputId = UUID.randomUUID().toString()
+        val work = privateOutput(outputId)
+        check(work.mkdir())
+        var published = false
+        try {
+            val environment = OrtEnvironment.getEnvironment()
+            val contexts = mutableListOf<Map<String, String>>()
+            AudioVersionWavlmRuntime.sessionOptions().use { options ->
+                environment.createSession(model.path, options).use { session ->
+                    AudioVersionWavlmRuntime.checkShape(session)
+                    OrtSession.RunOptions().use { run ->
+                        request.bind(run)
+                        try {
+                            for ((index, pair) in inputs.withIndex()) {
+                                val a = File(work, "$index-a.f32le")
+                                val b = File(work, "$index-b.f32le")
+                                runClip(environment, session, run, pair.first, a, request)
+                                runClip(environment, session, run, pair.second, b, request)
+                                contexts += mapOf("clip_id" to ids[index], "embedding_a" to a.path, "embedding_b" to b.path)
+                            }
+                        } finally {
+                            request.bind(null)
+                        }
+                    }
+                }
+            }
+            request.check()
+            published = true
+            return contract("verified") + mapOf("output_id" to outputId, "contexts" to contexts)
+        } finally {
+            if (!published) work.deleteRecursively()
+        }
+    }
+
+    private fun runClip(
+        environment: OrtEnvironment,
+        session: OrtSession,
+        run: OrtSession.RunOptions,
+        source: File,
+        destination: File,
+        request: Request,
+    ) {
+        request.check()
+        val raw = ByteArray(AudioVersionWavlmContract.INPUT_SAMPLES * 4)
+        source.inputStream().use { stream ->
+            var filled = 0
+            while (filled < raw.size) {
+                request.check()
+                val length = stream.read(raw, filled, raw.size - filled)
+                require(length > 0) { "Truncated PCM clip" }
+                filled += length
+            }
+            require(stream.read() == -1) { "PCM clip size changed" }
+        }
+        val pcm = FloatArray(AudioVersionWavlmContract.INPUT_SAMPLES)
+        ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(pcm)
+        AudioVersionWavlmRuntime.runClip(environment, session, run, pcm, destination, request::check)
+    }
+
+    override fun close() {
+        if (!closed.compareAndSet(false, true)) return
+        channel.setMethodCallHandler(null)
+        requests.values.forEach { it.cancel() }
+        // Drain queued requests so their Dart futures receive cancellation, not an orphaned reply.
+        executor.shutdown()
+    }
+}

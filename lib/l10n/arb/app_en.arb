@@ -10917,5 +10917,27 @@
         "type": "int"
       }
     }
-  }
+  },
+  "audioCompareTitle": "Compare audio versions",
+  "audioComparePrivacy": "Compare two complete local audio files on this device. No audio is uploaded. Each file must be 13 seconds to 10 minutes long.",
+  "audioCompareSelect": "Select second audio file",
+  "audioCompareStart": "Start comparison",
+  "audioCompareCancel": "Cancel",
+  "audioCompareDecodeA": "Preparing full audio A…",
+  "audioCompareDecodeB": "Preparing full audio B…",
+  "audioCompareAnalyzing": "Comparing audio on this device…",
+  "audioCompareNoModel": "Verification model is not installed. This first stage finds acoustic differences only; it cannot determine censorship. No model is downloaded automatically.",
+  "audioCompareIdentical": "Decoded audio is identical",
+  "audioCompareUnaligned": "Unable to align these recordings reliably",
+  "audioCompareBandwidth": "Insufficient shared frequency range",
+  "audioCompareReview": "Acoustic comparison complete — manual review required",
+  "audioCompareUnknown": "Censorship status of both versions: unknown. No version has been selected automatically. Even identical audio does not establish an uncensored original.",
+  "audioCompareDurationError": "Unsupported duration: each full file must be 13–600 seconds. Longer files are not compared partially.",
+  "audioCompareError": "Unable to compare these local files. Check file access and audio format, then try again.",
+  "audioCompareImportModel": "Import local WavLM analysis model (216 MB)",
+  "audioCompareModelReady": "Local analysis model is ready. Content changes can be verified; censorship direction remains unknown.",
+  "audioCompareContentChanged": "Content changes confirmed — censorship direction unknown",
+  "audioCompareContentUnconfirmed": "No content changes confirmed",
+  "audioCompareContentUncertain": "Content verification is inconclusive",
+  "audioCompareModelError": "Unable to import the analysis model. Select the original WavLM layer-6 ONNX file (216 MB); other models or damaged files are not accepted."
 }

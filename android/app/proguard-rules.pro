@@ -23,6 +23,9 @@
     native <methods>;
 }
 
+# ONNX Runtime's native bridge looks up its Java tensor/session classes.
+-keep class ai.onnxruntime.** { *; }
+
 # Kotlin coroutines - expanded rules
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}

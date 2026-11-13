@@ -63,6 +63,7 @@ class MainActivity: FlutterFragmentActivity() {
     internal var backendChannel: MethodChannel? = null
     internal var audioOutputChannel: MethodChannel? = null
     internal var concertCalendarChannel: MethodChannel? = null
+    private var audioVersionLearnedChannel: AudioVersionLearnedChannel? = null
     internal val coreBackend: CoreBackend by lazy { createCoreBackend(applicationContext) }
     private val nativeBackendMethods = setOf(
         "isAndroidTv",
@@ -438,6 +439,8 @@ class MainActivity: FlutterFragmentActivity() {
     }
 
     override fun onDestroy() {
+        audioVersionLearnedChannel?.close()
+        audioVersionLearnedChannel = null
         if (isFinishing) {
             val pending = pendingSafTreeResult
             pendingSafTreeResult = null
@@ -483,6 +486,8 @@ class MainActivity: FlutterFragmentActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         registerConcertCalendarChannel(messenger)
         registerAudioOutputChannel(messenger)
+        audioVersionLearnedChannel?.close()
+        audioVersionLearnedChannel = AudioVersionLearnedChannel(applicationContext, messenger)
 
         registerProgressStreams(messenger)
 

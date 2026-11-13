@@ -213,6 +213,7 @@ dependencies {
     implementation("net.java.dev.jna:jna:5.19.1@aar")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.31.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.documentfile:documentfile:1.1.0")
     implementation("androidx.activity:activity-ktx:1.13.0")

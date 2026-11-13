@@ -1,0 +1,202 @@
+{
+  "schema": "libremusic-content-postprocessing-golden-v1",
+  "shape": [
+    2,
+    599,
+    768
+  ],
+  "generator": {
+    "A": "For unsigned32 r=row0..598,c=channel0..767: v=(((r+1)*2246822519)mod2^32) XOR (((c+7)*3266489917)mod2^32); v=v XOR (v>>13); v=(v*668265263)mod2^32; A[r,c]=float32((v AND65535)/32768.0-1.0). No recurrence.",
+    "B": "Initially B=float32(A*float32(0.7)); then B[80:120]=float32(A[81:121]*float32(0.7)); B[240:260]=0; B[310:318]=float32(B[310:318]+float32(0.025)); B[420:435]=float32(A[20:35]*float32(0.7)). Ranges end-exclusive.",
+    "dtype": "All embedding operations round float32. Generator divisions use float64 then cast tofloat32."
+  },
+  "postprocessing": "L2 perrow max(norm,1e-9), cosine max(0,1-dot), symmetric same/\u00b11frame min; mean of directions; uniform3frames reflect boundary; frames t=i*.02+.0125. BaselineP95 via linear-interpolated quantile, excluding ALLcandidateintervals\u00b1.25; >=50outsideframes required. Event maskstart-.04,end+.04; V9(rawpeakexcess>=.55 OR normalized>=.65) ANDmedianexcess>=.05; baseline<.7.",
+  "outside_frame_count": 416,
+  "baseline_p95": 5.960464477539063e-08,
+  "selected_scores": [
+    {
+      "frame": 0,
+      "score": 0.0
+    },
+    {
+      "frame": 1,
+      "score": 0.0
+    },
+    {
+      "frame": 78,
+      "score": 7.947286206899662e-08
+    },
+    {
+      "frame": 79,
+      "score": 0.15561045706272125
+    },
+    {
+      "frame": 80,
+      "score": 0.15561044216156006
+    },
+    {
+      "frame": 81,
+      "score": 0.15561041235923767
+    },
+    {
+      "frame": 118,
+      "score": 1.9868215517249155e-08
+    },
+    {
+      "frame": 119,
+      "score": 1.9868215517249155e-08
+    },
+    {
+      "frame": 120,
+      "score": 9.934107758624577e-09
+    },
+    {
+      "frame": 121,
+      "score": 0.0
+    },
+    {
+      "frame": 238,
+      "score": 0.0
+    },
+    {
+      "frame": 239,
+      "score": 0.3283601999282837
+    },
+    {
+      "frame": 240,
+      "score": 0.6616935133934021
+    },
+    {
+      "frame": 241,
+      "score": 0.9950268864631653
+    },
+    {
+      "frame": 248,
+      "score": 1.0
+    },
+    {
+      "frame": 258,
+      "score": 0.995526134967804
+    },
+    {
+      "frame": 259,
+      "score": 0.6621928215026855
+    },
+    {
+      "frame": 260,
+      "score": 0.32885947823524475
+    },
+    {
+      "frame": 261,
+      "score": 0.0
+    },
+    {
+      "frame": 309,
+      "score": 0.0006555914878845215
+    },
+    {
+      "frame": 310,
+      "score": 0.0012445449829101562
+    },
+    {
+      "frame": 311,
+      "score": 0.0018641948699951172
+    },
+    {
+      "frame": 315,
+      "score": 0.0018666585674509406
+    },
+    {
+      "frame": 317,
+      "score": 0.0013178786030039191
+    },
+    {
+      "frame": 318,
+      "score": 0.000661015510559082
+    },
+    {
+      "frame": 319,
+      "score": 3.973643103449831e-08
+    },
+    {
+      "frame": 419,
+      "score": 0.3341066539287567
+    },
+    {
+      "frame": 420,
+      "score": 0.6753739714622498
+    },
+    {
+      "frame": 421,
+      "score": 0.9916496276855469
+    },
+    {
+      "frame": 429,
+      "score": 0.983559787273407
+    },
+    {
+      "frame": 434,
+      "score": 0.6581197381019592
+    },
+    {
+      "frame": 435,
+      "score": 0.3305191397666931
+    },
+    {
+      "frame": 436,
+      "score": 3.973643103449831e-08
+    },
+    {
+      "frame": 597,
+      "score": 0.0
+    },
+    {
+      "frame": 598,
+      "score": 0.0
+    }
+  ],
+  "events": [
+    {
+      "id": "one_frame_shift",
+      "start_B": 1.6125,
+      "end_B": 2.4125,
+      "peak": 0.15561045706272125,
+      "median": 1.9868215517249155e-08,
+      "normalized_peak_excess": 0.1556104067331795,
+      "confirmed": false,
+      "target_frame_count": 45
+    },
+    {
+      "id": "zero_vectors",
+      "start_B": 4.8125,
+      "end_B": 5.2125,
+      "peak": 1.0,
+      "median": 1.0,
+      "normalized_peak_excess": 1.0,
+      "confirmed": true,
+      "target_frame_count": 25
+    },
+    {
+      "id": "small_additive_change",
+      "start_B": 6.2125,
+      "end_B": 6.3725,
+      "peak": 0.0019415417918935418,
+      "median": 0.0015712480526417494,
+      "normalized_peak_excess": 0.0019414823029701295,
+      "confirmed": false,
+      "target_frame_count": 12
+    },
+    {
+      "id": "different_vectors",
+      "start_B": 8.4125,
+      "end_B": 8.7125,
+      "peak": 0.9916496276855469,
+      "median": 0.9611852169036865,
+      "normalized_peak_excess": 0.9916496271878259,
+      "confirmed": true,
+      "target_frame_count": 19
+    }
+  ],
+  "abs_tolerance": 2e-05,
+  "limits": "Synthetic postprocessing fixture, not trained model or semantic censorship ground truth."
+}

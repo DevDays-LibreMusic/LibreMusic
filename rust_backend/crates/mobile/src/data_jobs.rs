@@ -103,6 +103,53 @@ fn execute(
             )?;
             serde_json::to_value(grid).map_err(|error| error.to_string())
         }
+        "audio_version_prepare_clip" => mornye_core::audio_version_content::prepare_raw_clip(
+            string(request, "path")?,
+            request
+                .get("start_seconds")
+                .and_then(Value::as_f64)
+                .ok_or("Missing context time")?,
+            string(request, "output_path")?,
+            check,
+        ),
+        "audio_version_verify_context" => {
+            use mornye_core::audio_version_content as content;
+            let events: Vec<content::Event> = serde_json::from_value(
+                request
+                    .get("events")
+                    .cloned()
+                    .ok_or("Missing content events")?,
+            )
+            .map_err(|e| e.to_string())?;
+            let all: Vec<content::Event> = serde_json::from_value(
+                request
+                    .get("all_events")
+                    .cloned()
+                    .ok_or("Missing baseline events")?,
+            )
+            .map_err(|e| e.to_string())?;
+            let verified = content::verify_context(
+                string(request, "embedding_a")?,
+                string(request, "embedding_b")?,
+                request
+                    .get("context_start_b")
+                    .and_then(Value::as_f64)
+                    .ok_or("Missing content context")?,
+                &events,
+                &all,
+                string(request, "model_sha256")?,
+                check,
+            )?;
+            serde_json::to_value(verified).map_err(|e| e.to_string())
+        }
+        "audio_version_compare" => {
+            let result = mornye_core::audio_version_comparison::compare_files(
+                string(request, "path_a")?,
+                string(request, "path_b")?,
+                check,
+            )?;
+            serde_json::to_value(result).map_err(|error| error.to_string())
+        }
         "audio_features" => {
             use mornye_core::native_audio_features as features;
             let paths = request
