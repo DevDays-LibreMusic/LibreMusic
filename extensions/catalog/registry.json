@@ -39,7 +39,7 @@
       "version": "0.1.0",
       "description": "Прямой доступ к Deezer через ARL своего аккаунта: поиск, ссылки, коллекции, MP3 и FLAC. Экспериментальная версия.",
       "download_url": "https://raw.githubusercontent.com/DevDays-LibreMusic/LibreMusic/main/extensions/catalog/packages/deezer-direct.sflx",
-      "sha256": "de5bcf287e4e9f157448e26b8c9ad3da7129f910d2bf3833e62fc611fdb2b743",
+      "sha256": "211424d41d2d69d65ebbc529ac68002784b9aea78347e3793cd8514b01578a8c",
       "min_app_version": "4.9.1",
       "runtime": "javascript",
       "category": "download",

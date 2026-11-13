@@ -5,6 +5,8 @@
 mod account_tests;
 #[cfg(test)]
 mod container_tests;
+#[cfg(test)]
+mod fallback_tests;
 mod matching;
 mod metadata;
 mod paths;
@@ -53,6 +55,12 @@ enum DownloadOutcome {
     Retry(Value),
     // Successful downloads and host finalization failures are both terminal.
     Final(Value),
+}
+
+/// A provider-scoped stop ends this provider's ID lookup, not the configured
+/// cross-catalog fallback chain. Unknown scopes fail closed as recording locks.
+fn recording_fallback_blocked(availability: &Value) -> bool {
+    availability["skip_fallback"] == true && availability["fallback_scope"] != "provider"
 }
 
 fn diagnostic_value(value: &str) -> String {
@@ -269,33 +277,96 @@ impl Backend {
             return Ok(response);
         }
 
-        // A source catalog can explicitly prohibit replacing its recording.
+        // Source availability and a recording-identity veto are different.
+        // Ask the source even when it is selected: direct IDs must not invent
+        // an available stream and suppress the configured fallback providers.
         let mut source_availability = None;
         if !request.source.is_empty()
-            && selected != request.source
             && self
                 .download_manifest(&request.source)
                 .is_ok_and(|m| m.has_type("download_provider"))
         {
             let availability = self.download_availability(&request.source, &request, lease.clone());
             check()?;
-            if let Ok(availability) = availability
-                && availability["skip_fallback"] == true
-            {
-                selected = request.source.clone();
-                source_availability = Some(availability);
+            match availability {
+                Ok(mut availability) => {
+                    // checkAvailability is optional for a directly selected ID.
+                    if availability["supported"] == false && selected == request.source {
+                        availability = json!({"available":true});
+                    }
+                    if recording_fallback_blocked(&availability) {
+                        selected = request.source.clone();
+                    }
+                    source_availability = Some(availability);
+                }
+                Err(error) => {
+                    self.trace_download(&request, &request.source, "availability_error", &error);
+                    let response = failure(&request.source, &error, "", 0);
+                    if response["error_type"] == "verification_required" {
+                        self.cache_prepared(&key, &request, true);
+                        return Ok(response);
+                    }
+                    if selected == request.source
+                        && self
+                            .account_download_enabled(&request.source)
+                            .map_err(|error| error.to_string())?
+                    {
+                        return Ok(response);
+                    }
+                    source_availability = Some(json!({"available":false,"reason":error}));
+                }
             }
         }
-        if prepared != Some(true) {
+        let strict_source_fallback = source_availability.as_ref().is_some_and(|availability| {
+            availability["fallback_scope"] == "provider" || availability["available"] != true
+        });
+        let source_unavailable = source_availability
+            .as_ref()
+            .is_some_and(|availability| availability["available"] != true);
+        // Do not spend the retry budget fetching metadata from a source that
+        // has already failed. Cross-source identity is verified at the target.
+        if prepared != Some(true) && !source_unavailable {
             self.enrich_download_source(&mut request, lease.clone())?;
         }
 
+        let planned: Vec<&str> = priority
+            .iter()
+            .filter_map(|id| {
+                (self
+                    .download_manifest(id)
+                    .is_ok_and(|manifest| manifest.has_type("download_provider"))
+                    && (id == &selected || self.fallback_allowed(id).unwrap_or(false)))
+                .then_some(id.as_str())
+            })
+            .collect();
+        self.trace_download(
+            &request,
+            &selected,
+            "provider_plan",
+            &format!(
+                "selected={} use_fallback={} priority={}",
+                selected,
+                request.use_fallback,
+                serde_json::to_string(&planned).expect("provider IDs")
+            ),
+        );
         let mut last = None;
         let mut attempts = VecDeque::new();
-        if !request.source.is_empty() && selected == request.source {
+        let available_direct_source = request.use_fallback
+            && (selected.is_empty()
+                || !self
+                    .account_download_enabled(&selected)
+                    .map_err(|error| error.to_string())?)
+            && source_availability.as_ref().is_some_and(|availability| {
+                availability["available"] == true
+                    && availability["skip_fallback"] == true
+                    && availability["fallback_scope"] == "provider"
+            });
+        if !request.source.is_empty() && (selected == request.source || available_direct_source) {
             attempts.push_back((request.source.clone(), true));
         }
         let mut fallback = Some(priority);
+        let mut direct_source_attempted = false;
         loop {
             if attempts.is_empty() {
                 let Some(priority) = fallback.take() else {
@@ -314,7 +385,9 @@ impl Backend {
             };
             check()?;
             if id.is_empty()
-                || (!direct && id == request.source && request.source != selected)
+                || (!direct
+                    && id == request.source
+                    && (request.source != selected || direct_source_attempted))
                 || (!direct
                     && id != selected
                     && !self
@@ -328,6 +401,9 @@ impl Backend {
             };
             if !manifest.has_type("download_provider") {
                 continue;
+            }
+            if direct {
+                direct_source_attempted = true;
             }
             self.trace_download(
                 &request,
@@ -380,13 +456,16 @@ impl Backend {
                 &id,
                 "availability_result",
                 &format!(
-                    "available={} skip_fallback={} reason={}",
+                    "available={} skip_fallback={} fallback_scope={} reason={}",
                     availability["available"],
                     availability["skip_fallback"],
+                    availability["fallback_scope"],
                     text(&availability, "reason")
                 ),
             );
-            let stop = availability["skip_fallback"] == true || account_mode;
+            let stop = recording_fallback_blocked(&availability)
+                || account_mode
+                || (direct && manifest.stops_provider_fallback());
             if availability["available"] != true {
                 if stop {
                     return Ok(stopped(&id, &availability, ""));
@@ -418,7 +497,13 @@ impl Backend {
                 attempt.output_ext.clear();
             }
             let outcome = self
-                .download_resolved(&attempt, &manifest, &availability, lease.clone())
+                .download_resolved(
+                    &attempt,
+                    &manifest,
+                    &availability,
+                    lease.clone(),
+                    strict_source_fallback && id != request.source,
+                )
                 .inspect_err(|error| {
                     self.trace_download(&attempt, &manifest.name, "provider_error", error);
                 })?;
@@ -543,12 +628,11 @@ impl Backend {
             return Ok(None);
         }
         let direct = request.source.eq_ignore_ascii_case(selected);
-        let availability = if direct {
-            json!({"available":true})
-        } else {
+        let availability = {
             let result = self.download_availability(selected, request, lease.clone());
             lease.check_active().map_err(|error| error.to_string())?;
             match result {
+                Ok(value) if direct && value["supported"] == false => json!({"available":true}),
                 Ok(value) => value,
                 Err(error) => {
                     let response = failure(selected, &format!("Download failed: {error}"), "", 0);
@@ -559,8 +643,12 @@ impl Backend {
             }
         };
         if availability["available"] != true {
-            return Ok((availability["skip_fallback"] == true)
-                .then(|| stopped(selected, &availability, "")));
+            return Ok((recording_fallback_blocked(&availability)
+                || self
+                    .account_download_enabled(selected)
+                    .map_err(|error| error.to_string())?
+                || (direct && manifest.stops_provider_fallback()))
+            .then(|| stopped(selected, &availability, "")));
         }
         let mut attempt = request.clone();
         attempt.download_provider = selected.into();
@@ -570,7 +658,7 @@ impl Backend {
             attempt.output_ext.clear();
         }
         let outcome = self
-            .download_resolved(&attempt, &manifest, &availability, lease.clone())
+            .download_resolved(&attempt, &manifest, &availability, lease.clone(), false)
             .inspect_err(|error| {
                 self.trace_download(&attempt, &manifest.name, "provider_error", error);
             })?;
@@ -605,6 +693,7 @@ impl Backend {
         manifest: &ExtensionManifest,
         availability: &Value,
         lease: Arc<RequestLease>,
+        strict_recording: bool,
     ) -> Result<DownloadOutcome, String> {
         let source = [&request.service, &request.source]
             .into_iter()
@@ -622,9 +711,52 @@ impl Backend {
                 )));
             }
         };
+        let identity = if strict_recording && manifest.has_type("metadata_provider") {
+            let resolved = self.manager.provider_call_value(
+                &manifest.name,
+                "getTrack",
+                &json!([request.provider_track_id]).to_string(),
+                Some(lease.clone()),
+                15_000,
+            );
+            lease.check_active().map_err(|error| error.to_string())?;
+            let mut track = match resolved {
+                Ok(track) => track,
+                Err(error) => {
+                    return Ok(DownloadOutcome::Retry(failure(
+                        &manifest.name,
+                        &format!("Could not verify fallback recording: {error}"),
+                        "",
+                        0,
+                    )));
+                }
+            };
+            track["title"] = track.get("name").cloned().unwrap_or(Value::Null);
+            track["artist"] = track.get("artists").cloned().unwrap_or(Value::Null);
+            if text(&track, "id").trim() != request.provider_track_id.trim()
+                || !matching::strict_recording_match(request, &track)
+            {
+                return Ok(DownloadOutcome::Retry(failure(
+                    &manifest.name,
+                    "Fallback provider resolved a different track",
+                    "not_found",
+                    0,
+                )));
+            }
+            Some(track)
+        } else {
+            None
+        };
         let mut attempt = request.clone();
         attempt.quality = quality;
-        let outcome = self.download_attempt(&attempt, manifest, availability, lease)?;
+        let outcome = self.download_attempt(
+            &attempt,
+            manifest,
+            availability,
+            lease,
+            strict_recording,
+            identity.as_ref(),
+        )?;
         if let DownloadOutcome::Retry(response) = &outcome {
             self.log_provider_failure(
                 &request.download_provider,
@@ -748,6 +880,8 @@ impl Backend {
         manifest: &ExtensionManifest,
         availability: &Value,
         lease: Arc<RequestLease>,
+        strict_recording: bool,
+        resolved_identity: Option<&Value>,
     ) -> Result<DownloadOutcome, String> {
         let check = || {
             self.check()
@@ -791,7 +925,8 @@ impl Backend {
                 }
             }
         }
-        if !request.allow_quality_variant
+        if !strict_recording
+            && !request.allow_quality_variant
             && (request.album_folder_template.is_empty()
                 || !album_folder(request, &request.album_name).is_empty())
             && output
@@ -887,12 +1022,28 @@ impl Backend {
                 result["retry_after_seconds"].as_i64().unwrap_or_default(),
             )));
         }
+        // Metadata-light responses (for example YouTube file/codec only) can
+        // use the target provider's verified ID lookup. Never fill identity from
+        // the host request, and never overwrite a conflicting returned field.
+        if let Some(identity) = resolved_identity {
+            for key in ["title", "artist", "isrc"] {
+                if text(&result, key).trim().is_empty() {
+                    result[key] = identity[key].clone();
+                }
+            }
+            if result["duration_ms"].as_i64().unwrap_or_default() <= 0 {
+                result["duration_ms"] = identity["duration_ms"].clone();
+            }
+        }
         let skip_names = request.source.trim().eq_ignore_ascii_case(&manifest.name)
-            || manifest
-                .track_matching
-                .as_ref()
-                .is_some_and(|matching| matching.custom_matching);
-        if !matches_track(request, &result, skip_names) {
+            || (!strict_recording
+                && manifest
+                    .track_matching
+                    .as_ref()
+                    .is_some_and(|matching| matching.custom_matching));
+        if (strict_recording && !matching::strict_recording_match(request, &result))
+            || !matches_track(request, &result, skip_names)
+        {
             return Ok(DownloadOutcome::Retry(failure(
                 &manifest.name,
                 &format!("provider {} returned a different track", manifest.name),

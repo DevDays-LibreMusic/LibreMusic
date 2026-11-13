@@ -1,4 +1,5 @@
 import 'package:mornye/services/playback_diagnostics.dart';
+import 'package:mornye/services/track_search_ranking.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -433,7 +434,10 @@ class TrackNotifier extends Notifier<TrackState> {
       );
 
       state = TrackState(
-        tracks: tracks,
+        tracks: rankTrackSearchResults(
+          tracks,
+          preferExplicit: settings.preferExplicitTracks,
+        ),
         isLoading: false,
         hasSearchText: state.hasSearchText,
         isShowingRecentAccess: state.isShowingRecentAccess,
@@ -510,7 +514,10 @@ class TrackNotifier extends Notifier<TrackState> {
       );
 
       state = TrackState(
-        tracks: tracks,
+        tracks: rankTrackSearchResults(
+          tracks,
+          preferExplicit: ref.read(settingsProvider).preferExplicitTracks,
+        ),
         isLoading: false,
         hasSearchText: state.hasSearchText,
         isShowingRecentAccess: state.isShowingRecentAccess,

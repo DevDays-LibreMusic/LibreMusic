@@ -739,9 +739,17 @@ void main() {
       () async {
         await commit([song(1)]);
         final phone = sources();
+        addTearDown(phone.close);
+        final requested = Completer<void>();
+        sendOverride = (message, _) async {
+          requested.complete();
+          return 1;
+        };
         final name = '${_fileId(1)}.flac';
         final pending = phone.metadata(sourceId, name);
-        await pumpEventQueue();
+        // Metadata reads the catalog and received files asynchronously. Event
+        // queue turns do not guarantee that filesystem I/O has finished.
+        await requested.future;
         expect(sent, hasLength(1));
         final request = sent.single;
         expect(request.deviceId, _phone);

@@ -332,7 +332,7 @@ impl ExtensionManager {
                 return Err(verification_error(id));
             }
             if value.is_null() {
-                return Ok(json!({"available":false,"reason":"not implemented"}));
+                return Ok(json!({"available":false,"reason":"not implemented","supported":false}));
             }
         }
         if value.is_null() {

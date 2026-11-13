@@ -563,6 +563,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setAudioQuality(String quality) =>
       _commit(state.copyWith(audioQuality: quality));
 
+  void setPreferExplicitTracks(bool enabled) =>
+      _commit(state.copyWith(preferExplicitTracks: enabled));
+
   void setFilenameFormat(String format) =>
       _commit(state.copyWith(filenameFormat: format));
 
